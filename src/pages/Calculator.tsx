@@ -10,6 +10,9 @@ interface CalculatorProps {
 
 const Calculator: React.FC<CalculatorProps> = ({ onGetFreeReport }) => {
   const { t } = useLanguage();
+  const [name, setName] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [phone, setPhone] = useState<string>('');
   const [propertyPrice, setPropertyPrice] = useState<number>(800000);
   const [deposit, setDeposit] = useState<number>(160000);
   const [state, setState] = useState<string>('NSW');
@@ -56,6 +59,51 @@ const Calculator: React.FC<CalculatorProps> = ({ onGetFreeReport }) => {
         </div>
 
         <div className="bg-white/5 border border-[#C9A84C]/20 rounded-lg p-8 space-y-6">
+
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-semibold text-white mb-2 uppercase tracking-wide">
+              Full Name *
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-[#0A1628] border border-gray-600 rounded-lg px-4 py-3 text-white text-lg focus:outline-none focus:border-[#C9A84C]"
+              placeholder="Enter your full name"
+              required
+            />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-semibold text-white mb-2 uppercase tracking-wide">
+              Email Address *
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-[#0A1628] border border-gray-600 rounded-lg px-4 py-3 text-white text-lg focus:outline-none focus:border-[#C9A84C]"
+              placeholder="Enter your email"
+              required
+            />
+          </div>
+
+          {/* Phone */}
+          <div>
+            <label className="block text-sm font-semibold text-white mb-2 uppercase tracking-wide">
+              Phone Number *
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full bg-[#0A1628] border border-gray-600 rounded-lg px-4 py-3 text-white text-lg focus:outline-none focus:border-[#C9A84C]"
+              placeholder="Enter your phone number"
+              required
+            />
+          </div>
 
           {/* Property Price */}
           <div>
@@ -179,16 +227,23 @@ const Calculator: React.FC<CalculatorProps> = ({ onGetFreeReport }) => {
               <div className="pt-4 text-center">
                 <button
                   onClick={() => onGetFreeReport({
+                    name,
+                    email,
+                    phone,
                     propertyPrice,
                     state,
                     deposit,
                     loanAmount,
                     weeklyRent
                   })}
-                  className="px-8 py-3 bg-[#C9A84C] text-[#0A1628] font-bold text-lg rounded hover:bg-[#d4b865] transition-all"
+                  disabled={!name || !email || !phone}
+                  className="px-8 py-3 bg-[#C9A84C] text-[#0A1628] font-bold text-lg rounded hover:bg-[#d4b865] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Get Free Detailed Report
                 </button>
+                {(!name || !email || !phone) && (
+                  <p className="text-sm text-gray-400 mt-2">Please fill in Name, Email, and Phone to continue</p>
+                )}
               </div>
             </div>
           )}
