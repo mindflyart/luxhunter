@@ -3,6 +3,7 @@ import { Calculator, Save, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { classifyPostcode, getLVRLimits, calculateLVR, formatCurrency as formatCurr, type LocationClassification } from '../lib/postcodeClassification';
+import { calculateStampDuty as calculateStateStampDuty, type AustralianState } from '../lib/stampDuty';
 
 interface CalculatorResults {
   borrowingCapacity: number;
@@ -77,12 +78,6 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
     return monthlyPayment;
   };
 
-  const calculateStampDuty = (propertyValue: number): number => {
-    if (propertyValue <= 150000) return propertyValue * 0.014;
-    if (propertyValue <= 360000) return 2100 + (propertyValue - 150000) * 0.024;
-    if (propertyValue <= 725000) return 7140 + (propertyValue - 360000) * 0.06;
-    return 29040 + (propertyValue - 725000) * 0.055;
-  };
 
   useEffect(() => {
     if (postcode && postcode.length === 4) {
@@ -106,7 +101,8 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
     const borrowing = calculateBorrowingCapacity(income);
     const propertyValue = borrowing + depositAmount;
     const monthly = calculateMonthlyRepayment(borrowing, term);
-    const stamp = calculateStampDuty(propertyValue);
+    const stampDutyResult = calculateStateStampDuty(propertyValue, selectedState as AustralianState, false);
+    const stamp = stampDutyResult.amount;
 
     const calculatedResults: CalculatorResults = {
       borrowingCapacity: borrowing,
