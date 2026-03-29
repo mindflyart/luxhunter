@@ -58,7 +58,7 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
       setLoanTerm(parsed.loanTerm);
     }
 
-    const unlocked = localStorage.getItem('lh_unlocked');
+    const unlocked = sessionStorage.getItem('lh_unlocked');
     if (unlocked === 'true') {
       setIsUnlocked(true);
     }
@@ -187,7 +187,7 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
 
       console.log('Successfully saved to Airtable');
 
-      localStorage.setItem('lh_unlocked', 'true');
+      sessionStorage.setItem('lh_unlocked', 'true');
       setIsUnlocked(true);
       setLeadSubmitted(true);
     } catch (error) {
