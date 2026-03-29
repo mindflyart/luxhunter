@@ -178,74 +178,96 @@ const Calculator: React.FC<CalculatorProps> = ({ onGetFreeReport }) => {
           </div>
 
           {/* Results Summary */}
-          {propertyPrice > 0 && name && email && phone ? (
+          {propertyPrice > 0 ? (
             <div className="bg-[#0A1628] border border-[#C9A84C]/30 rounded-lg p-6 space-y-4">
-              <h3 className="text-xl font-bold text-[#C9A84C] mb-4">Investment Summary</h3>
+              {name && email && phone ? (
+                <>
+                  <h3 className="text-xl font-bold text-[#C9A84C] mb-4">Investment Summary</h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white/5 rounded-lg p-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Home size={20} className="text-[#C9A84C]" />
-                    <p className="text-sm text-gray-400">Loan Amount</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white/5 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Home size={20} className="text-[#C9A84C]" />
+                        <p className="text-sm text-gray-400">Loan Amount</p>
+                      </div>
+                      <p className="text-2xl font-bold text-white">{formatCurrency(loanAmount)}</p>
+                    </div>
+
+                    <div className="bg-white/5 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <DollarSign size={20} className="text-[#C9A84C]" />
+                        <p className="text-sm text-gray-400">Stamp Duty ({state})</p>
+                      </div>
+                      <p className="text-2xl font-bold text-white">{formatCurrency(stampDuty)}</p>
+                    </div>
+
+                    <div className="bg-white/5 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <PiggyBank size={20} className="text-[#C9A84C]" />
+                        <p className="text-sm text-gray-400">Total Cash Required</p>
+                      </div>
+                      <p className="text-2xl font-bold text-white">{formatCurrency(totalCashRequired)}</p>
+                    </div>
+
+                    <div className="bg-white/5 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <TrendingUp size={20} className="text-[#C9A84C]" />
+                        <p className="text-sm text-gray-400">Gross Rental Yield</p>
+                      </div>
+                      <p className="text-2xl font-bold text-white">{grossYield.toFixed(2)}%</p>
+                    </div>
                   </div>
-                  <p className="text-2xl font-bold text-white">{formatCurrency(loanAmount)}</p>
-                </div>
 
-                <div className="bg-white/5 rounded-lg p-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <DollarSign size={20} className="text-[#C9A84C]" />
-                    <p className="text-sm text-gray-400">Stamp Duty ({state})</p>
+                  <div className="border-t border-gray-700 pt-4 mt-4">
+                    <div className="bg-white/5 rounded-lg p-4">
+                      <p className="text-sm text-gray-400 mb-1">Monthly Repayment (6.5% over 30 years)</p>
+                      <p className="text-3xl font-bold text-white">{formatCurrency(monthlyRepayment)}</p>
+                      <p className="text-sm text-gray-400 mt-2">Net Yield: {netYield.toFixed(2)}%</p>
+                    </div>
                   </div>
-                  <p className="text-2xl font-bold text-white">{formatCurrency(stampDuty)}</p>
-                </div>
 
-                <div className="bg-white/5 rounded-lg p-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <PiggyBank size={20} className="text-[#C9A84C]" />
-                    <p className="text-sm text-gray-400">Total Cash Required</p>
+                  <div className="pt-4 text-center">
+                    <button
+                      onClick={() => onGetFreeReport({
+                        name,
+                        email,
+                        phone,
+                        propertyPrice,
+                        state,
+                        deposit,
+                        loanAmount,
+                        weeklyRent
+                      })}
+                      className="px-8 py-3 bg-[#C9A84C] text-[#0A1628] font-bold text-lg rounded hover:bg-[#d4b865] transition-all"
+                    >
+                      Get Free Detailed Report
+                    </button>
                   </div>
-                  <p className="text-2xl font-bold text-white">{formatCurrency(totalCashRequired)}</p>
-                </div>
-
-                <div className="bg-white/5 rounded-lg p-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <TrendingUp size={20} className="text-[#C9A84C]" />
-                    <p className="text-sm text-gray-400">Gross Rental Yield</p>
+                </>
+              ) : (
+                <>
+                  <div className="bg-white/5 rounded-lg p-6">
+                    <p className="text-sm text-gray-400 mb-2">Monthly Repayment (6.5% over 30 years)</p>
+                    <p className="text-4xl font-bold text-white">{formatCurrency(monthlyRepayment)}</p>
                   </div>
-                  <p className="text-2xl font-bold text-white">{grossYield.toFixed(2)}%</p>
-                </div>
-              </div>
 
-              <div className="border-t border-gray-700 pt-4 mt-4">
-                <div className="bg-white/5 rounded-lg p-4">
-                  <p className="text-sm text-gray-400 mb-1">Monthly Repayment (6.5% over 30 years)</p>
-                  <p className="text-3xl font-bold text-white">{formatCurrency(monthlyRepayment)}</p>
-                  <p className="text-sm text-gray-400 mt-2">Net Yield: {netYield.toFixed(2)}%</p>
-                </div>
-              </div>
-
-              <div className="pt-4 text-center">
-                <button
-                  onClick={() => onGetFreeReport({
-                    name,
-                    email,
-                    phone,
-                    propertyPrice,
-                    state,
-                    deposit,
-                    loanAmount,
-                    weeklyRent
-                  })}
-                  className="px-8 py-3 bg-[#C9A84C] text-[#0A1628] font-bold text-lg rounded hover:bg-[#d4b865] transition-all"
-                >
-                  Get Free Detailed Report
-                </button>
-              </div>
+                  <div className="bg-[#C9A84C]/10 border border-[#C9A84C]/30 rounded-lg p-6 text-center">
+                    <p className="text-white font-semibold mb-2">Want to see the full breakdown?</p>
+                    <p className="text-gray-300 text-sm">Please fill in your Name, Email, and Phone above to unlock:</p>
+                    <ul className="text-gray-300 text-sm mt-2 space-y-1">
+                      <li>Loan Amount</li>
+                      <li>Stamp Duty</li>
+                      <li>Total Cash Required</li>
+                      <li>Rental Yield Analysis</li>
+                    </ul>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <div className="bg-[#0A1628] border border-gray-600/30 rounded-lg p-8 text-center">
               <CalcIcon size={48} className="text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 text-lg">Please fill in your details to see results</p>
+              <p className="text-gray-400 text-lg">Enter a property price to see your monthly repayment</p>
             </div>
           )}
 
