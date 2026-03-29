@@ -234,47 +234,32 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
       <div className="relative">
         {showResults && results && (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <div className="bg-[#0D1F35] border border-[#C9A84C]/30 rounded-lg p-4 text-center">
-                <div className="text-2xl mb-2">🏠</div>
-                <p className="text-gray-400 text-sm mb-2">
-                  {language === 'en' ? 'Borrowing Power' : '借款能力'}
-                </p>
-                <p className="text-xl font-bold text-white">
-                  {!isUnlocked ? '$---,---' : formatCurrency(results.borrowingCapacity)}
-                </p>
-              </div>
-              <div className="bg-[#0D1F35] border border-[#C9A84C]/30 rounded-lg p-4 text-center">
-                <div className="text-2xl mb-2">💰</div>
-                <p className="text-gray-400 text-sm mb-2">
-                  {language === 'en' ? 'Monthly Repayment' : '月还款额'}
-                </p>
-                <p className="text-xl font-bold text-white">
-                  {!isUnlocked ? '$-,---/mo' : `${formatCurrency(results.monthlyRepayment)}/mo`}
-                </p>
-              </div>
-              <div className="bg-[#0D1F35] border border-[#C9A84C]/30 rounded-lg p-4 text-center">
-                <div className="text-2xl mb-2">📊</div>
-                <p className="text-gray-400 text-sm mb-2">
-                  {language === 'en' ? 'Stamp Duty' : '印花税'}
-                </p>
-                <p className="text-xl font-bold text-white">
-                  {!isUnlocked ? '—' : formatCurrency(results.stampDuty)}
-                </p>
-              </div>
+            <div className="bg-[#0D1F35] border border-[#C9A84C]/30 rounded-lg p-6 text-center mb-6">
+              <div className="text-2xl mb-2">💰</div>
+              <p className="text-gray-400 text-sm mb-2">
+                {language === 'en' ? 'Monthly Repayment' : '月还款额'}
+              </p>
+              <p className="text-4xl font-bold text-white">
+                {formatCurrency(results.monthlyRepayment)}<span className="text-2xl text-gray-400">/mo</span>
+              </p>
             </div>
 
-            {!isUnlocked && (
+            {!isUnlocked ? (
               <div className="bg-[#0A1628]/80 border border-[#C9A84C]/50 rounded-lg p-6 mb-8">
                 <div className="text-center mb-6">
                   <h3 className="text-2xl font-bold text-[#C9A84C] mb-2">
-                    {language === 'en' ? 'Unlock Your Full Results' : '解锁完整结果'}
+                    {language === 'en' ? 'Want to see the full breakdown?' : '想查看完整明细？'}
                   </h3>
-                  <p className="text-gray-300 text-sm">
+                  <p className="text-gray-300 text-sm mb-4">
                     {language === 'en'
-                      ? 'Enter your details to see your borrowing capacity, monthly repayment, and stamp duty estimate.'
-                      : '输入您的信息以查看借款能力、月还款额和印花税估算。'}
+                      ? 'Enter your details below to unlock:'
+                      : '输入您的信息以解锁：'}
                   </p>
+                  <ul className="text-gray-300 text-sm space-y-1 mb-6">
+                    <li>• {language === 'en' ? 'Borrowing Power' : '借款能力'}</li>
+                    <li>• {language === 'en' ? 'Stamp Duty Estimate' : '印花税估算'}</li>
+                    <li>• {language === 'en' ? 'Detailed Analysis' : '详细分析'}</li>
+                  </ul>
                 </div>
 
                 <form onSubmit={handleLeadSubmit} className="space-y-4">
@@ -331,11 +316,32 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
                           ? 'Submitting...'
                           : '提交中...'
                         : language === 'en'
-                        ? 'Unlock & View Results'
-                        : '解锁并查看结果'}
+                        ? 'Unlock Full Results'
+                        : '解锁完整结果'}
                     </button>
                   </div>
                 </form>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <div className="bg-[#0D1F35] border border-[#C9A84C]/30 rounded-lg p-4 text-center">
+                  <div className="text-2xl mb-2">🏠</div>
+                  <p className="text-gray-400 text-sm mb-2">
+                    {language === 'en' ? 'Borrowing Power' : '借款能力'}
+                  </p>
+                  <p className="text-xl font-bold text-white">
+                    {formatCurrency(results.borrowingCapacity)}
+                  </p>
+                </div>
+                <div className="bg-[#0D1F35] border border-[#C9A84C]/30 rounded-lg p-4 text-center">
+                  <div className="text-2xl mb-2">📊</div>
+                  <p className="text-gray-400 text-sm mb-2">
+                    {language === 'en' ? 'Stamp Duty' : '印花税'}
+                  </p>
+                  <p className="text-xl font-bold text-white">
+                    {formatCurrency(results.stampDuty)}
+                  </p>
+                </div>
               </div>
             )}
           </>
