@@ -514,14 +514,12 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
                 <Save size={20} />
                 <span>{language === 'en' ? 'Save My Results' : '保存结果'}</span>
               </button>
-              <a
-                href="https://www.ribbonfinance.com.au/apply"
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={() => window.location.href = '/contact'}
                 className="px-6 py-3 bg-[#C9A84C] text-[#0A1628] font-bold rounded hover:bg-[#d4b865] transition-colors text-center"
               >
                 {language === 'en' ? 'Get Expert Assessment' : '获取专家评估'}
-              </a>
+              </button>
             </div>
           </div>
         )}
