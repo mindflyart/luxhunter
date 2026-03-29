@@ -160,9 +160,9 @@ const Contact: React.FC = () => {
                 <select
                   value={formData.preferredContact}
                   onChange={(e) => setFormData({ ...formData, preferredContact: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white focus:outline-none focus:border-[#C9A84C] transition-colors"
+                  className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white focus:outline-none focus:border-[#C9A84C] transition-colors [&>option]:text-gray-900 [&>option]:bg-white"
                 >
-                  <option value="">{t('contact.preferred')}</option>
+                  <option value="" className="text-gray-500">{t('contact.preferred')}</option>
                   <option value="telegram">{t('contact.telegram')}</option>
                   <option value="whatsapp">{t('contact.whatsapp')}</option>
                   <option value="email">Email</option>
