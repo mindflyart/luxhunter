@@ -13,10 +13,10 @@ const Calculator: React.FC<CalculatorProps> = ({ onGetFreeReport }) => {
   const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
-  const [propertyPrice, setPropertyPrice] = useState<number>(800000);
-  const [deposit, setDeposit] = useState<number>(160000);
+  const [propertyPrice, setPropertyPrice] = useState<number>(0);
+  const [deposit, setDeposit] = useState<number>(0);
   const [state, setState] = useState<string>('NSW');
-  const [weeklyRent, setWeeklyRent] = useState<number>(650);
+  const [weeklyRent, setWeeklyRent] = useState<number>(0);
 
   const australianStates = [
     { code: 'NSW', name: 'New South Wales' },
@@ -178,7 +178,7 @@ const Calculator: React.FC<CalculatorProps> = ({ onGetFreeReport }) => {
           </div>
 
           {/* Results Summary */}
-          {propertyPrice > 0 && (
+          {propertyPrice > 0 && deposit > 0 && weeklyRent > 0 ? (
             <div className="bg-[#0A1628] border border-[#C9A84C]/30 rounded-lg p-6 space-y-4">
               <h3 className="text-xl font-bold text-[#C9A84C] mb-4">Investment Summary</h3>
 
@@ -245,6 +245,11 @@ const Calculator: React.FC<CalculatorProps> = ({ onGetFreeReport }) => {
                   <p className="text-sm text-gray-400 mt-2">Please fill in Name, Email, and Phone to continue</p>
                 )}
               </div>
+            </div>
+          ) : (
+            <div className="bg-[#0A1628] border border-gray-600/30 rounded-lg p-8 text-center">
+              <CalcIcon size={48} className="text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400 text-lg">Please enter property details to see your investment summary</p>
             </div>
           )}
 
