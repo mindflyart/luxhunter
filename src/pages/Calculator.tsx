@@ -178,7 +178,7 @@ const Calculator: React.FC<CalculatorProps> = ({ onGetFreeReport }) => {
           </div>
 
           {/* Results Summary */}
-          {propertyPrice > 0 && deposit > 0 && weeklyRent > 0 ? (
+          {propertyPrice > 0 && name && email && phone ? (
             <div className="bg-[#0A1628] border border-[#C9A84C]/30 rounded-lg p-6 space-y-4">
               <h3 className="text-xl font-bold text-[#C9A84C] mb-4">Investment Summary</h3>
 
@@ -236,20 +236,16 @@ const Calculator: React.FC<CalculatorProps> = ({ onGetFreeReport }) => {
                     loanAmount,
                     weeklyRent
                   })}
-                  disabled={!name || !email || !phone}
-                  className="px-8 py-3 bg-[#C9A84C] text-[#0A1628] font-bold text-lg rounded hover:bg-[#d4b865] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-8 py-3 bg-[#C9A84C] text-[#0A1628] font-bold text-lg rounded hover:bg-[#d4b865] transition-all"
                 >
                   Get Free Detailed Report
                 </button>
-                {(!name || !email || !phone) && (
-                  <p className="text-sm text-gray-400 mt-2">Please fill in Name, Email, and Phone to continue</p>
-                )}
               </div>
             </div>
           ) : (
             <div className="bg-[#0A1628] border border-gray-600/30 rounded-lg p-8 text-center">
               <CalcIcon size={48} className="text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 text-lg">Please enter property details to see your investment summary</p>
+              <p className="text-gray-400 text-lg">Please fill in your details to see results</p>
             </div>
           )}
 
