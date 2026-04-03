@@ -59,22 +59,20 @@ const Contact: React.FC = () => {
         <div className="grid lg:grid-cols-2 gap-12">
           <div>
             <h2 className="text-2xl font-bold text-white mb-6">{t('contact.quickConnect')}</h2>
-            <div className="space-y-4 mb-8">
-              <a
-                href="https://calendly.com/luxhunter"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center space-x-4 bg-[#C9A84C]/10 border-2 border-[#C9A84C] rounded-lg p-6 hover:bg-[#C9A84C]/20 transition-all group"
-              >
-                <div className="p-3 bg-[#C9A84C]/20 rounded-full group-hover:bg-[#C9A84C]/30 transition-colors">
-                  <Calendar className="text-[#C9A84C]" size={24} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">Book a Consultation</h3>
-                  <p className="text-gray-300">Schedule a meeting via Calendly</p>
-                </div>
-              </a>
+            <div className="bg-white rounded-xl overflow-hidden" style={{minHeight: '650px'}}>
+              <div
+                className="calendly-inline-widget w-full"
+                data-url="https://calendly.com/luxhunter?hide_gdpr_banner=1&background_color=0A1628&text_color=ffffff&primary_color=C9A84C"
+                style={{minWidth: '320px', height: '650px'}}
+              />
+            </div>
+            <script
+              type="text/javascript"
+              src="https://assets.calendly.com/assets/external/widget.js"
+              async
+            />
 
+            <div className="space-y-4 mt-8">
               <a
                 href="https://t.me/"
                 target="_blank"
@@ -106,7 +104,7 @@ const Contact: React.FC = () => {
               </a>
             </div>
 
-            <div className="bg-white/5 border border-[#C9A84C]/20 rounded-lg p-6">
+            <div className="bg-white/5 border border-[#C9A84C]/20 rounded-lg p-6 mt-8">
               <div className="flex items-start space-x-3 mb-4">
                 <Mail className="text-[#C9A84C] mt-1" size={20} />
                 <div>
