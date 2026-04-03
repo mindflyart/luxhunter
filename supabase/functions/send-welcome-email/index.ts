@@ -87,6 +87,8 @@ Deno.serve(async (req: Request) => {
         </div>
       `;
     } else {
+      const unsubscribeUrl = `${appUrl}/unsubscribe?email=${encodeURIComponent(email)}`;
+
       emailSubject = "Welcome to LuxHunter Property Services!";
       emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0A1628; color: #ffffff; padding: 40px; border-radius: 12px;">
@@ -104,7 +106,10 @@ Deno.serve(async (req: Request) => {
             <li>Latest Sydney property trends</li>
           </ul>
           <hr style="border: none; border-top: 1px solid #1e3a5f; margin: 24px 0;">
-          <p style="color: #888; font-size: 12px; text-align: center;">To unsubscribe, contact us at info@luxhunter.com.au</p>
+          <p style="color: #888; font-size: 12px; text-align: center;">
+            <a href="${unsubscribeUrl}" style="color: #C9A84C; text-decoration: none;">Unsubscribe</a> |
+            Questions? Contact us at <a href="mailto:info@luxhunter.com.au" style="color: #C9A84C; text-decoration: none;">info@luxhunter.com.au</a>
+          </p>
         </div>
       `;
     }
