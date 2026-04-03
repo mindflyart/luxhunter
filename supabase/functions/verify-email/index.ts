@@ -93,18 +93,22 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    if (leadData.propertyPrice || leadData.deposit) {
+    if (leadData.propertyPrice || leadData.deposit || leadData.borrowingCapacity) {
       const resendApiKey = Deno.env.get("RESEND_API_KEY");
       const appUrl = Deno.env.get("APP_URL") || "https://luxhunter.com";
 
       if (resendApiKey) {
         const calculatorResults = `
-          <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #0A1628; margin-top: 0;">Your Calculator Results</h3>
-            ${leadData.propertyPrice ? `<p><strong>Property Price:</strong> $${Number(leadData.propertyPrice).toLocaleString()}</p>` : ''}
-            ${leadData.deposit ? `<p><strong>Deposit:</strong> $${Number(leadData.deposit).toLocaleString()}</p>` : ''}
-            ${leadData.loanAmount ? `<p><strong>Loan Amount:</strong> $${Number(leadData.loanAmount).toLocaleString()}</p>` : ''}
-            ${leadData.state ? `<p><strong>State:</strong> ${leadData.state}</p>` : ''}
+          <div style="background: #1e3a5f; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #C9A84C;">
+            <h3 style="color: #C9A84C; margin-top: 0;">📊 Your Calculator Results</h3>
+            ${leadData.borrowingCapacity ? `<p style="color: #fff; margin: 10px 0;"><strong>Borrowing Capacity:</strong> $${Number(leadData.borrowingCapacity).toLocaleString()}</p>` : ''}
+            ${leadData.monthlyRepayment ? `<p style="color: #fff; margin: 10px 0;"><strong>Monthly Repayment:</strong> $${Number(leadData.monthlyRepayment).toLocaleString()}/month</p>` : ''}
+            ${leadData.stampDuty ? `<p style="color: #fff; margin: 10px 0;"><strong>Stamp Duty:</strong> $${Number(leadData.stampDuty).toLocaleString()}</p>` : ''}
+            ${leadData.propertyPrice ? `<p style="color: #fff; margin: 10px 0;"><strong>Property Price:</strong> $${Number(leadData.propertyPrice).toLocaleString()}</p>` : ''}
+            ${leadData.deposit ? `<p style="color: #fff; margin: 10px 0;"><strong>Deposit:</strong> $${Number(leadData.deposit).toLocaleString()}</p>` : ''}
+            ${leadData.loanTerm ? `<p style="color: #fff; margin: 10px 0;"><strong>Loan Term:</strong> ${leadData.loanTerm} years</p>` : ''}
+            ${leadData.state ? `<p style="color: #fff; margin: 10px 0;"><strong>State:</strong> ${leadData.state}</p>` : ''}
+            ${leadData.postcode ? `<p style="color: #fff; margin: 10px 0;"><strong>Postcode:</strong> ${leadData.postcode}</p>` : ''}
           </div>
         `;
 

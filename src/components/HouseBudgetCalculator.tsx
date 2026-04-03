@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { classifyPostcode, getLVRLimits, calculateLVR, formatCurrency as formatCurr, type LocationClassification } from '../lib/postcodeClassification';
 import { calculateStampDuty as calculateStateStampDuty, type AustralianState } from '../lib/stampDuty';
+import CalculatorVerificationModal from './CalculatorVerificationModal';
 
 interface CalculatorResults {
   borrowingCapacity: number;
@@ -40,15 +41,7 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
   const [locationClassification, setLocationClassification] = useState<LocationClassification | null>(null);
   const [results, setResults] = useState<CalculatorResults | null>(null);
   const [showResults, setShowResults] = useState(false);
-  const [isUnlocked, setIsUnlocked] = useState(false);
-  const [showUnlockForm, setShowUnlockForm] = useState(false);
-  const [leadFormData, setLeadFormData] = useState({
-    fullName: '',
-    email: '',
-    state: 'NSW',
-  });
-  const [isSubmittingLead, setIsSubmittingLead] = useState(false);
-  const [leadSubmitted, setLeadSubmitted] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   useEffect(() => {
     const savedData = localStorage.getItem('luxhunter_calculator');
@@ -57,11 +50,6 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
       setAnnualIncome(parsed.annualIncome);
       setDeposit(parsed.deposit);
       setLoanTerm(parsed.loanTerm);
-    }
-
-    const unlocked = localStorage.getItem('lh_unlocked');
-    if (unlocked === 'true') {
-      setIsUnlocked(true);
     }
   }, []);
 
@@ -116,82 +104,7 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
 
     setResults(calculatedResults);
     setShowResults(true);
-  };
-
-  useEffect(() => {
-    if (showResults && !isUnlocked) {
-      setLeadFormData((prev) => ({ ...prev, state: selectedState }));
-    }
-  }, [showResults, selectedState, isUnlocked]);
-
-  const handleLeadSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!leadFormData.fullName || !leadFormData.email || !leadFormData.state) {
-      alert(language === 'en' ? 'Please fill in all required fields.' : '请填写所有必填字段。');
-      return;
-    }
-
-    if (!results) return;
-
-    setIsSubmittingLead(true);
-
-    try {
-      const { error } = await supabase.from('calculator_unlocks').insert({
-        full_name: leadFormData.fullName,
-        email: leadFormData.email,
-        state: leadFormData.state,
-      });
-
-      if (error) throw error;
-
-      const airtableData = {
-        name: leadFormData.fullName,
-        email: leadFormData.email,
-        phone: '',
-        source: 'Calculator',
-        interest: ['Property Calculator'],
-        budget: parseFloat(deposit) + results.borrowingCapacity,
-        notes: `Loan Term: ${loanTerm} years, Postcode: ${postcode}`,
-        landingPage: window.location.pathname,
-        state: leadFormData.state,
-        propertyPrice: parseFloat(deposit) + results.borrowingCapacity,
-        deposit: parseFloat(deposit),
-        loanTerm: parseInt(loanTerm),
-        postcode: postcode,
-      };
-
-      console.log('Sending to Airtable:', airtableData);
-
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-to-airtable`;
-      const airtableResponse = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(airtableData),
-      });
-
-      const airtableResult = await airtableResponse.json();
-      console.log('Airtable response:', airtableResult);
-
-      if (!airtableResponse.ok) {
-        console.error('Failed to save to Airtable:', airtableResult);
-        throw new Error(`Airtable save failed: ${airtableResult.error || 'Unknown error'}`);
-      }
-
-      console.log('Successfully saved to Airtable');
-
-      localStorage.setItem('lh_unlocked', 'true');
-      setIsUnlocked(true);
-      setLeadSubmitted(true);
-    } catch (error) {
-      console.error('Error submitting lead:', error);
-      alert(language === 'en' ? 'Failed to submit. Please try again.' : '提交失败。请重试。');
-    } finally {
-      setIsSubmittingLead(false);
-    }
+    setShowVerificationModal(true);
   };
 
   const handleSaveResults = () => {
@@ -210,138 +123,35 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
   };
 
   return (
-    <div className="bg-gradient-to-br from-[#C9A84C]/10 to-[#C9A84C]/5 border border-[#C9A84C]/30 rounded-2xl p-8 md:p-10">
-      <div className="text-center mb-8">
-        <div className="flex justify-center mb-4">
-          <div className="p-4 bg-[#C9A84C]/10 rounded-full">
-            <Calculator className="text-[#C9A84C]" size={32} />
-          </div>
-        </div>
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
-          {language === 'en' ? 'Your Borrowing Capacity' : '您的贷款能力'}
-        </h2>
-        <p className="text-gray-300">
-          {language === 'en'
-            ? 'Calculate your borrowing capacity in seconds'
-            : '在几秒钟内计算您的借款能力'}
-        </p>
-      </div>
+    <>
+      <CalculatorVerificationModal
+        isOpen={showVerificationModal}
+        onClose={() => setShowVerificationModal(false)}
+        calculatorResults={{
+          ...results!,
+          postcode,
+          state: selectedState,
+        }}
+      />
 
-      <div className="relative">
-        {showResults && results && (
-          <>
-            <div className="bg-[#0D1F35] border border-[#C9A84C]/30 rounded-lg p-6 text-center mb-6">
-              <div className="text-2xl mb-2">💰</div>
-              <p className="text-gray-400 text-sm mb-2">
-                {language === 'en' ? 'Monthly Repayment' : '月还款额'}
-              </p>
-              <p className="text-4xl font-bold text-white">
-                {formatCurrency(results.monthlyRepayment)}<span className="text-2xl text-gray-400">/mo</span>
-              </p>
+      <div className="bg-gradient-to-br from-[#C9A84C]/10 to-[#C9A84C]/5 border border-[#C9A84C]/30 rounded-2xl p-8 md:p-10">
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <div className="p-4 bg-[#C9A84C]/10 rounded-full">
+              <Calculator className="text-[#C9A84C]" size={32} />
             </div>
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
+            {language === 'en' ? 'Your Borrowing Capacity' : '您的贷款能力'}
+          </h2>
+          <p className="text-gray-300">
+            {language === 'en'
+              ? 'Calculate your borrowing capacity in seconds'
+              : '在几秒钟内计算您的借款能力'}
+          </p>
+        </div>
 
-            {!isUnlocked ? (
-              <div className="bg-[#0A1628]/80 border border-[#C9A84C]/50 rounded-lg p-6 mb-8">
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold text-[#C9A84C] mb-2">
-                    {language === 'en' ? 'Want to see the full breakdown?' : '想查看完整明细？'}
-                  </h3>
-                  <p className="text-gray-300 text-sm mb-4">
-                    {language === 'en'
-                      ? 'Enter your details below to unlock:'
-                      : '输入您的信息以解锁：'}
-                  </p>
-                  <ul className="text-gray-300 text-sm space-y-1 mb-6">
-                    <li>• {language === 'en' ? 'Borrowing Power' : '借款能力'}</li>
-                    <li>• {language === 'en' ? 'Stamp Duty Estimate' : '印花税估算'}</li>
-                    <li>• {language === 'en' ? 'Detailed Analysis' : '详细分析'}</li>
-                  </ul>
-                </div>
-
-                <form onSubmit={handleLeadSubmit} className="space-y-4">
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div>
-                      <input
-                        type="text"
-                        value={leadFormData.fullName}
-                        onChange={(e) =>
-                          setLeadFormData({ ...leadFormData, fullName: e.target.value })
-                        }
-                        required
-                        className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white placeholder-gray-500 focus:outline-none focus:border-[#C9A84C] transition-colors"
-                        placeholder={language === 'en' ? 'Your Name' : '您的姓名'}
-                      />
-                    </div>
-                    <div>
-                      <input
-                        type="email"
-                        value={leadFormData.email}
-                        onChange={(e) =>
-                          setLeadFormData({ ...leadFormData, email: e.target.value })
-                        }
-                        required
-                        className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white placeholder-gray-500 focus:outline-none focus:border-[#C9A84C] transition-colors"
-                        placeholder={language === 'en' ? 'Your Email' : '您的邮箱'}
-                      />
-                    </div>
-                    <div>
-                      <select
-                        value={leadFormData.state}
-                        onChange={(e) =>
-                          setLeadFormData({ ...leadFormData, state: e.target.value })
-                        }
-                        required
-                        className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white focus:outline-none focus:border-[#C9A84C] transition-colors [&>option]:text-gray-900 [&>option]:bg-white"
-                      >
-                        {AUSTRALIAN_STATES.map((state) => (
-                          <option key={state.value} value={state.value}>
-                            {state.value}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <button
-                      type="submit"
-                      disabled={isSubmittingLead}
-                      className="px-10 py-4 bg-[#C9A84C] text-[#0A1628] font-bold text-lg rounded hover:bg-[#d4b865] transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isSubmittingLead
-                        ? language === 'en'
-                          ? 'Submitting...'
-                          : '提交中...'
-                        : language === 'en'
-                        ? 'Unlock Full Results'
-                        : '解锁完整结果'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                <div className="bg-[#0D1F35] border border-[#C9A84C]/30 rounded-lg p-4 text-center">
-                  <div className="text-2xl mb-2">🏠</div>
-                  <p className="text-gray-400 text-sm mb-2">
-                    {language === 'en' ? 'Borrowing Power' : '借款能力'}
-                  </p>
-                  <p className="text-xl font-bold text-white">
-                    {formatCurrency(results.borrowingCapacity)}
-                  </p>
-                </div>
-                <div className="bg-[#0D1F35] border border-[#C9A84C]/30 rounded-lg p-4 text-center">
-                  <div className="text-2xl mb-2">📊</div>
-                  <p className="text-gray-400 text-sm mb-2">
-                    {language === 'en' ? 'Stamp Duty' : '印花税'}
-                  </p>
-                  <p className="text-xl font-bold text-white">
-                    {formatCurrency(results.stampDuty)}
-                  </p>
-                </div>
-              </div>
-            )}
-          </>
-        )}
+        <div className="relative">
 
         <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
           <div>
@@ -480,47 +290,17 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
           </div>
         )}
 
-        <div className="text-center mb-6">
-          <button
-            onClick={handleCalculate}
-            className="px-10 py-4 bg-[#C9A84C] text-[#0A1628] font-bold text-lg rounded hover:bg-[#d4b865] transition-all transform hover:scale-105"
-          >
-            {language === 'en' ? 'Calculate Now' : '立即计算'}
-          </button>
-        </div>
-
-        {showResults && results && isUnlocked && (
-          <div className="bg-white/5 border border-[#C9A84C]/30 rounded-lg p-6 md:p-8">
-            {leadSubmitted && (
-              <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4 mb-6 flex items-center justify-center space-x-2">
-                <CheckCircle className="text-green-400" size={20} />
-                <p className="text-green-300 font-semibold">
-                  {language === 'en'
-                    ? 'Results unlocked! Thank you for your details.'
-                    : '结果已解锁！感谢您提供信息。'}
-                </p>
-              </div>
-            )}
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={handleSaveResults}
-                className="flex items-center justify-center space-x-2 px-6 py-3 bg-white/10 border border-[#C9A84C]/30 text-white font-semibold rounded hover:bg-white/20 transition-colors"
-              >
-                <Save size={20} />
-                <span>{language === 'en' ? 'Save My Results' : '保存结果'}</span>
-              </button>
-              <button
-                onClick={() => window.location.href = '/contact'}
-                className="px-6 py-3 bg-[#C9A84C] text-[#0A1628] font-bold rounded hover:bg-[#d4b865] transition-colors text-center"
-              >
-                {language === 'en' ? 'Get Expert Assessment' : '获取专家评估'}
-              </button>
-            </div>
+          <div className="text-center mb-6">
+            <button
+              onClick={handleCalculate}
+              className="px-10 py-4 bg-[#C9A84C] text-[#0A1628] font-bold text-lg rounded hover:bg-[#d4b865] transition-all transform hover:scale-105"
+            >
+              {language === 'en' ? 'Calculate Now' : '立即计算'}
+            </button>
           </div>
-        )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
