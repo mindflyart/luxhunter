@@ -53,9 +53,40 @@ const Enquire: React.FC = () => {
 
     setIsSubmitting(true);
 
-    // Simulate submission
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const leadData = {
+        name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        state: formData.state,
+        interest_type: formData.propertyType,
+        source: 'Enquiry Form',
+        message: formData.message,
+      };
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          name: formData.fullName,
+          type: 'verification',
+          leadData,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send verification email');
+      }
+
       setShowSuccess(true);
       setFormData({
         fullName: '',
@@ -69,7 +100,14 @@ const Enquire: React.FC = () => {
       setTimeout(() => {
         setShowSuccess(false);
       }, 5000);
-    }, 1000);
+    } catch (err) {
+      console.error('Error submitting enquiry:', err);
+      alert(language === 'en'
+        ? 'Failed to submit enquiry. Please try again.'
+        : '提交咨询失败。请重试。');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
