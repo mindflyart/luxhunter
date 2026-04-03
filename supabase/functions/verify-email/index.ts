@@ -95,7 +95,7 @@ Deno.serve(async (req: Request) => {
 
     if (leadData.propertyPrice || leadData.deposit) {
       const resendApiKey = Deno.env.get("RESEND_API_KEY");
-      const appUrl = Deno.env.get("APP_URL") || "https://luxhunter.com.au";
+      const appUrl = Deno.env.get("APP_URL") || "https://luxhunter.com";
 
       if (resendApiKey) {
         const calculatorResults = `
@@ -136,7 +136,7 @@ Deno.serve(async (req: Request) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              from: "LuxHunter <noreply@luxhunter.com.au>",
+              from: "LuxHunter <noreply@mail.luxhunter.com>",
               to: [tokenRecord.email],
               subject: "Your LuxHunter Property Report & Calculator Results",
               html: emailHtml,

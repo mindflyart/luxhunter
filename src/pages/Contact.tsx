@@ -70,10 +70,11 @@ const Contact: React.FC = () => {
         <div className="grid lg:grid-cols-2 gap-12">
           <div>
             <h2 className="text-2xl font-bold text-white mb-6">{t('contact.quickConnect')}</h2>
+            {/* TODO: Replace with real Calendly URL */}
             <div className="bg-white rounded-xl overflow-hidden" style={{minHeight: '650px'}}>
               <div
                 className="calendly-inline-widget w-full"
-                data-url="https://calendly.com/luxhunter?hide_gdpr_banner=1&background_color=0A1628&text_color=ffffff&primary_color=C9A84C"
+                data-url=""
                 style={{minWidth: '320px', height: '650px'}}
               />
             </div>

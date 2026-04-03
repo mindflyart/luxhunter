@@ -39,7 +39,7 @@ Deno.serve(async (req: Request) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const appUrl = Deno.env.get("APP_URL") || "https://luxhunter.com.au";
+    const appUrl = Deno.env.get("APP_URL") || "https://luxhunter.com";
 
     let emailSubject = "";
     let emailHtml = "";
