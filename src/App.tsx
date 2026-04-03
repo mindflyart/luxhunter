@@ -20,13 +20,14 @@ import ArticleBorrowingCapacity from './pages/ArticleBorrowingCapacity';
 import Enquire from './pages/Enquire';
 import Admin from './pages/Admin';
 import LeadLanding from './pages/LeadLanding';
+import VerifyEmail from './pages/VerifyEmail';
 
 const getInitialPage = () => {
   const path = window.location.pathname.slice(1);
   const validPages = [
     'home', 'services', 'calculator', 'about', 'contact',
     'privacy-policy', 'terms-of-service', 'article-sydney-prices',
-    'article-borrowing-capacity', 'enquire', 'admin', 'lead'
+    'article-borrowing-capacity', 'enquire', 'admin', 'lead', 'verify-email'
   ];
   return validPages.includes(path) ? path : 'home';
 };
@@ -97,6 +98,8 @@ function App() {
         return <Admin />;
       case 'lead':
         return <LeadLanding />;
+      case 'verify-email':
+        return <VerifyEmail />;
       default:
         return <Home onGetFreeReport={() => setShowFreeReportModal(true)} onNavigate={setCurrentPage} />;
     }

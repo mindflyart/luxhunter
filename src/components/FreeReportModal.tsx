@@ -46,44 +46,40 @@ const FreeReportModal: React.FC<FreeReportModalProps> = ({ isOpen, onClose, onSu
     setError('');
 
     try {
-      // Save to Supabase
-      const { error: submitError } = await supabase
-        .from('free_report_requests')
-        .insert([{
-          full_name: fullName,
-          email,
-          phone: phone || null,
-          state,
-          interest_type: interestType
-        }]);
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      if (submitError) throw submitError;
-
-      // Send to Airtable
-      const airtableData = {
+      const leadData = {
         name: fullName,
         email,
         phone,
         state,
-        interest: [interestType],
-        source: 'Calculator Form',
-        propertyPrice: calculatorData?.propertyPrice || 0,
-        deposit: calculatorData?.deposit || 0,
-        loanTerm: 30,
-        notes: `Interest: ${interestType}${calculatorData ? ` | Loan Amount: $${calculatorData.loanAmount?.toLocaleString()}` : ''}`
+        interest_type: interestType,
+        source: 'Free Report Form',
+        propertyPrice: calculatorData?.propertyPrice || null,
+        deposit: calculatorData?.deposit || null,
+        loanAmount: calculatorData?.loanAmount || null,
       };
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-      await fetch(`${supabaseUrl}/functions/v1/save-to-airtable`, {
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${supabaseAnonKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(airtableData)
+        body: JSON.stringify({
+          email,
+          name: fullName,
+          type: 'verification',
+          leadData,
+        }),
       });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send verification email');
+      }
 
       setFullName('');
       setEmail('');

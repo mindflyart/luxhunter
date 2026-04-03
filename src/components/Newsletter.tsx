@@ -63,6 +63,7 @@ const Newsletter: React.FC = () => {
           body: JSON.stringify({
             email: formData.email,
             name: formData.name,
+            type: 'newsletter',
           }),
         });
       } catch (emailError) {
