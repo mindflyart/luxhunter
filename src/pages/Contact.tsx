@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Mail, Phone, MessageCircle, Send, Calendar } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, Phone, MessageCircle, Send } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 
@@ -14,6 +14,17 @@ const Contact: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://assets.calendly.com/assets/external/widget.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,11 +77,6 @@ const Contact: React.FC = () => {
                 style={{minWidth: '320px', height: '650px'}}
               />
             </div>
-            <script
-              type="text/javascript"
-              src="https://assets.calendly.com/assets/external/widget.js"
-              async
-            />
 
             <div className="space-y-4 mt-8">
               <a
