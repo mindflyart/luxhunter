@@ -14,6 +14,7 @@ interface CalculatorVerificationModalProps {
     loanTerm: string;
     postcode: string;
     state: string;
+    locationClassification?: string;
   };
 }
 
@@ -53,9 +54,11 @@ const CalculatorVerificationModal: React.FC<CalculatorVerificationModalProps> = 
         deposit: parseFloat(calculatorResults.deposit),
         loanTerm: parseInt(calculatorResults.loanTerm),
         postcode: calculatorResults.postcode,
+        annualIncome: parseFloat(calculatorResults.annualIncome),
         borrowingCapacity: calculatorResults.borrowingCapacity,
         monthlyRepayment: calculatorResults.monthlyRepayment,
         stampDuty: calculatorResults.stampDuty,
+        locationClassification: calculatorResults.locationClassification || 'N/A',
       };
 
       const response = await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {

@@ -131,6 +131,7 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
           ...results!,
           postcode,
           state: selectedState,
+          locationClassification: locationClassification || undefined,
         }}
       />
 

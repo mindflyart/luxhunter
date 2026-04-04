@@ -22,6 +22,13 @@ Deno.serve(async (req: Request) => {
   try {
     const { email, name, type, leadData }: WelcomeEmailRequest = await req.json();
 
+    console.log("Received email request:", {
+      email,
+      name,
+      type,
+      leadData,
+    });
+
     if (!email) {
       return new Response(JSON.stringify({ error: "Email is required" }), {
         status: 400,
@@ -160,6 +167,16 @@ Deno.serve(async (req: Request) => {
         <div style="background: #1e3a5f; padding: 24px; border-radius: 8px; margin: 24px 0; border: 2px solid #C9A84C;">
           <h3 style="color: #C9A84C; margin: 0 0 20px 0; font-size: 20px; text-align: center;">Complete Calculator Results</h3>
           <table role="presentation" style="width: 100%; border-collapse: collapse;">
+            ${leadData.annualIncome ? `
+              <tr>
+                <td style="padding: 12px; border-bottom: 1px solid rgba(201, 168, 76, 0.2);">
+                  <p style="color: #C9A84C; margin: 0; font-size: 14px; font-weight: 600;">Annual Income</p>
+                </td>
+                <td style="padding: 12px; border-bottom: 1px solid rgba(201, 168, 76, 0.2); text-align: right;">
+                  <p style="color: #fff; margin: 0; font-size: 18px; font-weight: bold;">$${Number(leadData.annualIncome).toLocaleString()}</p>
+                </td>
+              </tr>
+            ` : ''}
             ${leadData.borrowingCapacity ? `
               <tr>
                 <td style="padding: 12px; border-bottom: 1px solid rgba(201, 168, 76, 0.2);">
@@ -212,11 +229,31 @@ Deno.serve(async (req: Request) => {
             ` : ''}
             ${leadData.loanTerm ? `
               <tr>
-                <td style="padding: 12px;">
+                <td style="padding: 12px; border-bottom: 1px solid rgba(201, 168, 76, 0.2);">
                   <p style="color: #C9A84C; margin: 0; font-size: 14px; font-weight: 600;">Loan Term</p>
                 </td>
-                <td style="padding: 12px; text-align: right;">
+                <td style="padding: 12px; border-bottom: 1px solid rgba(201, 168, 76, 0.2); text-align: right;">
                   <p style="color: #fff; margin: 0; font-size: 18px; font-weight: bold;">${leadData.loanTerm} years</p>
+                </td>
+              </tr>
+            ` : ''}
+            ${leadData.postcode && leadData.state ? `
+              <tr>
+                <td style="padding: 12px; border-bottom: 1px solid rgba(201, 168, 76, 0.2);">
+                  <p style="color: #C9A84C; margin: 0; font-size: 14px; font-weight: 600;">Location</p>
+                </td>
+                <td style="padding: 12px; border-bottom: 1px solid rgba(201, 168, 76, 0.2); text-align: right;">
+                  <p style="color: #fff; margin: 0; font-size: 18px; font-weight: bold;">${leadData.postcode}, ${leadData.state}</p>
+                </td>
+              </tr>
+            ` : ''}
+            ${leadData.locationClassification && leadData.locationClassification !== 'N/A' ? `
+              <tr>
+                <td style="padding: 12px;">
+                  <p style="color: #C9A84C; margin: 0; font-size: 14px; font-weight: 600;">Location Classification</p>
+                </td>
+                <td style="padding: 12px; text-align: right;">
+                  <p style="color: #fff; margin: 0; font-size: 18px; font-weight: bold;">${leadData.locationClassification}</p>
                 </td>
               </tr>
             ` : ''}

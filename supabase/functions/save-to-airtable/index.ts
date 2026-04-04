@@ -16,6 +16,11 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const { token, ...directData } = body;
 
+    console.log("Received Airtable save request:", {
+      token,
+      directData,
+    });
+
     const airtableApiKey = Deno.env.get("AIRTABLE_API_KEY");
     const airtableBaseId = Deno.env.get("AIRTABLE_BASE_ID");
     const airtableTableName = Deno.env.get("AIRTABLE_TABLE_NAME") || "Leads";
@@ -56,11 +61,18 @@ Deno.serve(async (req: Request) => {
       "Email": leadData.email || "",
       "Phone": leadData.phone || "",
       "State": leadData.state || "",
+      "Postcode": leadData.postcode || "",
       "Interest Type": leadData.interest || leadData.interest_type || "",
       "Source": leadData.source || "Website",
+      "Preferred Contact": leadData.preferredContact || "",
+      "Annual Income": leadData.annualIncome ? Number(leadData.annualIncome) : undefined,
+      "Borrowing Capacity": leadData.borrowingCapacity ? Number(leadData.borrowingCapacity) : undefined,
+      "Monthly Repayment": leadData.monthlyRepayment ? Number(leadData.monthlyRepayment) : undefined,
+      "Stamp Duty": leadData.stampDuty ? Number(leadData.stampDuty) : undefined,
       "Property Price": leadData.propertyPrice ? Number(leadData.propertyPrice) : undefined,
       "Deposit": leadData.deposit ? Number(leadData.deposit) : undefined,
-      "Loan Term": leadData.loanTerm ? Number(leadData.loanTerm) : 30,
+      "Loan Term": leadData.loanTerm ? Number(leadData.loanTerm) : undefined,
+      "Location Classification": leadData.locationClassification || "",
       "Notes": leadData.notes || "",
       "Date Submitted": new Date().toISOString(),
     };
