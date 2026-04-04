@@ -73,7 +73,7 @@ Deno.serve(async (req: Request) => {
       }
 
       const verificationUrl = `${appUrl}/verify-email?token=${token}`;
-
+      const displayName = name || 'Valued Client';
       const borrowingCapacity = leadData?.borrowingCapacity
         ? `$${Number(leadData.borrowingCapacity).toLocaleString()}`
         : 'N/A';
@@ -85,8 +85,7 @@ Deno.serve(async (req: Request) => {
         : 'N/A';
 
       emailSubject = "Verify Your Email - Unlock Your Property Report";
-      emailHtml = `
-<!DOCTYPE html>
+      emailHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -99,20 +98,16 @@ Deno.serve(async (req: Request) => {
         <tr>
             <td align="center" style="padding: 40px 20px;">
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px; background-color: #0a1628;">
-
                     <tr>
                         <td style="padding: 32px 40px; text-align: center;">
                             <span style="font-size: 24px; font-weight: 700; color: #c9a84c; letter-spacing: 2px;">LUXHUNTER</span>
                             <p style="margin: 8px 0 0 0; font-size: 13px; color: #ffffff; letter-spacing: 0.5px;">Premium Property &amp; Mortgage Advisory</p>
                         </td>
                     </tr>
-
                     <tr>
                         <td style="padding: 0 40px 40px 40px;">
-                            <p style="margin: 0 0 24px 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Dear ${name || 'Valued Client'},</p>
-
+                            <p style="margin: 0 0 24px 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Dear ${displayName},</p>
                             <p style="margin: 0 0 32px 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Thank you for using the LuxHunter Borrowing Capacity Calculator. Here are your preliminary results:</p>
-
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 32px; border-top: 1px solid #374151;">
                                 <tr>
                                     <td style="padding: 20px 0; border-bottom: 1px solid #374151;">
@@ -151,7 +146,6 @@ Deno.serve(async (req: Request) => {
                                     </td>
                                 </tr>
                             </table>
-
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 32px 0;">
                                 <tr>
                                     <td align="center" style="padding: 0;">
@@ -165,13 +159,10 @@ Deno.serve(async (req: Request) => {
                                     </td>
                                 </tr>
                             </table>
-
                             <p style="margin: 32px 0 0 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Once verified, you'll receive your complete personalized property report with detailed insights and recommendations.</p>
-
                             <p style="margin: 24px 0 0 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Best regards,<br><span style="color: #c9a84c; font-weight: 700;">The LuxHunter Team</span></p>
                         </td>
                     </tr>
-
                     <tr>
                         <td style="padding: 32px 40px; text-align: center; border-top: 1px solid #374151;">
                             <p style="margin: 0 0 16px 0; font-size: 13px; line-height: 1.6; color: #9ca3af;">
@@ -182,14 +173,12 @@ Deno.serve(async (req: Request) => {
                             <p style="margin: 0; font-size: 11px; color: #6b7280;">© 2026 LuxHunter. All rights reserved.</p>
                         </td>
                     </tr>
-
                 </table>
             </td>
         </tr>
     </table>
 </body>
-</html>
-      `;
+</html>`;
     } else if (type === "report") {
       const unsubscribeUrl = `${appUrl}/unsubscribe?email=${encodeURIComponent(email)}`;
       const calendlyUrl = "https://calendly.com/luxhunter";
