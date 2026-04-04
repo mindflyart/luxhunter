@@ -1,4 +1,19 @@
-<!DOCTYPE html>
+interface EmailTemplateParams {
+  name: string;
+  borrowingCapacity: string;
+  monthlyRepayment: string;
+  stampDuty: string;
+  verificationUrl: string;
+}
+
+export function generateVerificationEmail({
+  name,
+  borrowingCapacity,
+  monthlyRepayment,
+  stampDuty,
+  verificationUrl,
+}: EmailTemplateParams): string {
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -21,7 +36,7 @@
 
                     <tr>
                         <td style="padding: 0 40px 40px 40px;">
-                            <p style="margin: 0 0 24px 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Dear {{name}},</p>
+                            <p style="margin: 0 0 24px 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Dear ${name},</p>
 
                             <p style="margin: 0 0 32px 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Thank you for using the LuxHunter Borrowing Capacity Calculator. Here are your preliminary results:</p>
 
@@ -33,7 +48,7 @@
                                                 <td style="font-size: 14px; font-weight: 700; color: #c9a84c; padding-bottom: 4px;">Borrowing Capacity</td>
                                             </tr>
                                             <tr>
-                                                <td style="font-size: 24px; font-weight: 700; color: #ffffff;">{{borrowingCapacity}}</td>
+                                                <td style="font-size: 24px; font-weight: 700; color: #ffffff;">${borrowingCapacity}</td>
                                             </tr>
                                         </table>
                                     </td>
@@ -45,7 +60,7 @@
                                                 <td style="font-size: 14px; font-weight: 700; color: #c9a84c; padding-bottom: 4px;">Monthly Repayment</td>
                                             </tr>
                                             <tr>
-                                                <td style="font-size: 24px; font-weight: 700; color: #ffffff;">{{monthlyRepayment}}</td>
+                                                <td style="font-size: 24px; font-weight: 700; color: #ffffff;">${monthlyRepayment}</td>
                                             </tr>
                                         </table>
                                     </td>
@@ -57,7 +72,7 @@
                                                 <td style="font-size: 14px; font-weight: 700; color: #c9a84c; padding-bottom: 4px;">Stamp Duty</td>
                                             </tr>
                                             <tr>
-                                                <td style="font-size: 24px; font-weight: 700; color: #ffffff;">{{stampDuty}}</td>
+                                                <td style="font-size: 24px; font-weight: 700; color: #ffffff;">${stampDuty}</td>
                                             </tr>
                                         </table>
                                     </td>
@@ -70,7 +85,7 @@
                                         <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                                             <tr>
                                                 <td style="background-color: #c9a84c; border-radius: 6px;">
-                                                    <a href="{{verificationUrl}}" target="_blank" style="display: inline-block; padding: 18px 48px; font-size: 18px; font-weight: 700; color: #0a1628; text-decoration: none; border-radius: 6px;">Verify My Email &amp; Get Full Report</a>
+                                                    <a href="${verificationUrl}" target="_blank" style="display: inline-block; padding: 18px 48px; font-size: 18px; font-weight: 700; color: #0a1628; text-decoration: none; border-radius: 6px;">Verify My Email &amp; Get Full Report</a>
                                                 </td>
                                             </tr>
                                         </table>
@@ -100,4 +115,5 @@
         </tr>
     </table>
 </body>
-</html>
+</html>`;
+}
