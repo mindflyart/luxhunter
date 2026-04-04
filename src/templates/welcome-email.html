@@ -14,14 +14,14 @@
 
                     <tr>
                         <td style="padding: 32px 40px; text-align: center;">
-                            <h1 style="margin: 0 0 8px 0; font-size: 36px; font-weight: 700; color: #c9a84c; letter-spacing: -0.5px;">LuxHunter</h1>
-                            <p style="margin: 0; font-size: 14px; color: #9ca3af; letter-spacing: 0.5px;">Premium Property & Mortgage Advisory</p>
+                            <span style="font-size: 24px; font-weight: 700; color: #c9a84c; letter-spacing: 2px;">LUXHUNTER</span>
+                            <p style="margin: 8px 0 0 0; font-size: 13px; color: #ffffff; letter-spacing: 0.5px;">Premium Property &amp; Mortgage Advisory</p>
                         </td>
                     </tr>
 
                     <tr>
                         <td style="padding: 0 40px 40px 40px;">
-                            <p style="margin: 0 0 24px 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Dear {{name}},</p>
+                            <p style="margin: 0 0 24px 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Dear ${name},</p>
 
                             <p style="margin: 0 0 32px 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Thank you for using the LuxHunter Borrowing Capacity Calculator. Here are your preliminary results:</p>
 
@@ -33,7 +33,7 @@
                                                 <td style="font-size: 14px; font-weight: 700; color: #c9a84c; padding-bottom: 4px;">Borrowing Capacity</td>
                                             </tr>
                                             <tr>
-                                                <td style="font-size: 24px; font-weight: 700; color: #ffffff;">{{borrowingCapacity}}</td>
+                                                <td style="font-size: 24px; font-weight: 700; color: #ffffff;">${borrowingCapacity}</td>
                                             </tr>
                                         </table>
                                     </td>
@@ -45,7 +45,7 @@
                                                 <td style="font-size: 14px; font-weight: 700; color: #c9a84c; padding-bottom: 4px;">Monthly Repayment</td>
                                             </tr>
                                             <tr>
-                                                <td style="font-size: 24px; font-weight: 700; color: #ffffff;">{{monthlyRepayment}}</td>
+                                                <td style="font-size: 24px; font-weight: 700; color: #ffffff;">${monthlyRepayment}</td>
                                             </tr>
                                         </table>
                                     </td>
@@ -57,7 +57,7 @@
                                                 <td style="font-size: 14px; font-weight: 700; color: #c9a84c; padding-bottom: 4px;">Stamp Duty</td>
                                             </tr>
                                             <tr>
-                                                <td style="font-size: 24px; font-weight: 700; color: #ffffff;">{{stampDuty}}</td>
+                                                <td style="font-size: 24px; font-weight: 700; color: #ffffff;">${stampDuty}</td>
                                             </tr>
                                         </table>
                                     </td>
@@ -70,7 +70,7 @@
                                         <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                                             <tr>
                                                 <td style="background-color: #c9a84c; border-radius: 6px;">
-                                                    <a href="{{verificationUrl}}" target="_blank" style="display: inline-block; padding: 18px 48px; font-size: 18px; font-weight: 700; color: #0a1628; text-decoration: none; border-radius: 6px;">Verify My Email &amp; Get Full Report</a>
+                                                    <a href="${verificationUrl}" target="_blank" style="display: inline-block; padding: 18px 48px; font-size: 18px; font-weight: 700; color: #0a1628; text-decoration: none; border-radius: 6px;">Verify My Email &amp; Get Full Report</a>
                                                 </td>
                                             </tr>
                                         </table>

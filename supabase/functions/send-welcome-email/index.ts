@@ -74,90 +74,121 @@ Deno.serve(async (req: Request) => {
 
       const verificationUrl = `${appUrl}/verify-email?token=${token}`;
 
-      const calculatorSummary = leadData ? `
-        <div style="background: #1e3a5f; padding: 24px; border-radius: 8px; margin: 24px 0; border: 2px solid #C9A84C;">
-          <h3 style="color: #C9A84C; margin: 0 0 16px 0; font-size: 18px;">Your Calculator Results Preview</h3>
-          ${leadData.monthlyRepayment ? `
-            <div style="margin: 12px 0; padding: 12px; background: rgba(201, 168, 76, 0.1); border-radius: 6px;">
-              <p style="color: #C9A84C; font-size: 14px; margin: 0 0 4px 0; font-weight: 600;">Monthly Repayment</p>
-              <p style="color: #fff; font-size: 24px; font-weight: bold; margin: 0;">$${Number(leadData.monthlyRepayment).toLocaleString()}/month</p>
-            </div>
-          ` : ''}
-          ${leadData.borrowingCapacity ? `
-            <div style="margin: 12px 0; padding: 12px; background: rgba(201, 168, 76, 0.1); border-radius: 6px;">
-              <p style="color: #C9A84C; font-size: 14px; margin: 0 0 4px 0; font-weight: 600;">Borrowing Power</p>
-              <p style="color: #fff; font-size: 24px; font-weight: bold; margin: 0;">$${Number(leadData.borrowingCapacity).toLocaleString()}</p>
-            </div>
-          ` : ''}
-          ${leadData.stampDuty ? `
-            <div style="margin: 12px 0; padding: 12px; background: rgba(201, 168, 76, 0.1); border-radius: 6px;">
-              <p style="color: #C9A84C; font-size: 14px; margin: 0 0 4px 0; font-weight: 600;">Stamp Duty</p>
-              <p style="color: #fff; font-size: 24px; font-weight: bold; margin: 0;">$${Number(leadData.stampDuty).toLocaleString()}</p>
-            </div>
-          ` : ''}
-        </div>
-      ` : '';
+      const borrowingCapacity = leadData?.borrowingCapacity
+        ? `$${Number(leadData.borrowingCapacity).toLocaleString()}`
+        : 'N/A';
+      const monthlyRepayment = leadData?.monthlyRepayment
+        ? `$${Number(leadData.monthlyRepayment).toLocaleString()}/month`
+        : 'N/A';
+      const stampDuty = leadData?.stampDuty
+        ? `$${Number(leadData.stampDuty).toLocaleString()}`
+        : 'N/A';
 
       emailSubject = "Verify Your Email - Unlock Your Property Report";
       emailHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #0a1628;">
-          <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #0a1628;">
-            <tr>
-              <td align="center" style="padding: 40px 20px;">
-                <table role="presentation" style="max-width: 600px; width: 100%; border-collapse: collapse; background: linear-gradient(135deg, #0a1628 0%, #1e3a5f 100%); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);">
-                  <tr>
-                    <td style="padding: 48px 40px; text-align: center; background: #0a1628; border-bottom: 3px solid #C9A84C;">
-                      <h1 style="color: #C9A84C; font-size: 36px; margin: 0; font-weight: bold; letter-spacing: 1px;">LuxHunter</h1>
-                      <p style="color: #888; font-size: 14px; margin: 8px 0 0 0; letter-spacing: 2px; text-transform: uppercase;">Property & Mortgage Advisory</p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 40px;">
-                      <h2 style="color: #ffffff; font-size: 24px; margin: 0 0 16px 0; font-weight: 600;">Dear ${name || "Valued Client"},</h2>
-                      <p style="color: #ccc; line-height: 1.8; font-size: 16px; margin: 0 0 24px 0;">Thank you for using the LuxHunter Property Calculator. We're excited to help you on your property journey!</p>
-                      ${calculatorSummary}
-                      <p style="color: #fff; line-height: 1.8; font-size: 16px; margin: 24px 0; padding: 20px; background: rgba(201, 168, 76, 0.1); border-left: 4px solid #C9A84C; border-radius: 4px;">
-                        <strong>Click the button below to verify your email and unlock your full property report with detailed analysis and personalized recommendations.</strong>
-                      </p>
-                      <table role="presentation" style="margin: 32px auto; text-align: center;">
-                        <tr>
-                          <td style="border-radius: 8px; background: linear-gradient(135deg, #C9A84C 0%, #d4b865 100%); box-shadow: 0 4px 16px rgba(201, 168, 76, 0.4);">
-                            <a href="${verificationUrl}" style="display: inline-block; padding: 18px 48px; color: #0A1628; text-decoration: none; font-weight: bold; font-size: 18px; letter-spacing: 0.5px;">
-                              ✓ Verify My Email
-                            </a>
-                          </td>
-                        </tr>
-                      </table>
-                      <p style="color: #888; font-size: 13px; line-height: 1.6; margin: 24px 0 0 0; padding: 16px; background: rgba(255, 255, 255, 0.05); border-radius: 6px;">
-                        <strong>Note:</strong> This verification link expires in 24 hours. If you did not request this report, please ignore this email.
-                      </p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 32px 40px; background: #0a1628; border-top: 1px solid #1e3a5f;">
-                      <p style="color: #666; font-size: 12px; text-align: center; margin: 0 0 12px 0;">
-                        <a href="${appUrl}/privacy-policy" style="color: #C9A84C; text-decoration: none; margin: 0 8px;">Privacy Policy</a> |
-                        <a href="${appUrl}/terms-of-service" style="color: #C9A84C; text-decoration: none; margin: 0 8px;">Terms of Service</a> |
-                        <a href="${appUrl}/unsubscribe?email=${encodeURIComponent(email)}" style="color: #C9A84C; text-decoration: none; margin: 0 8px;">Unsubscribe</a>
-                      </p>
-                      <p style="color: #888; font-size: 12px; text-align: center; margin: 0;">
-                        LuxHunter Property Services<br>
-                        <a href="mailto:info@luxhunter.com.au" style="color: #C9A84C; text-decoration: none;">info@luxhunter.com.au</a>
-                      </p>
-                    </td>
-                  </tr>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Verify Your Email - LuxHunter</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0a1628;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #0a1628;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px; background-color: #0a1628;">
+
+                    <tr>
+                        <td style="padding: 32px 40px; text-align: center;">
+                            <span style="font-size: 24px; font-weight: 700; color: #c9a84c; letter-spacing: 2px;">LUXHUNTER</span>
+                            <p style="margin: 8px 0 0 0; font-size: 13px; color: #ffffff; letter-spacing: 0.5px;">Premium Property &amp; Mortgage Advisory</p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
+                            <p style="margin: 0 0 24px 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Dear ${name || 'Valued Client'},</p>
+
+                            <p style="margin: 0 0 32px 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Thank you for using the LuxHunter Borrowing Capacity Calculator. Here are your preliminary results:</p>
+
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 32px; border-top: 1px solid #374151;">
+                                <tr>
+                                    <td style="padding: 20px 0; border-bottom: 1px solid #374151;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                            <tr>
+                                                <td style="font-size: 14px; font-weight: 700; color: #c9a84c; padding-bottom: 4px;">Borrowing Capacity</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 24px; font-weight: 700; color: #ffffff;">${borrowingCapacity}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 20px 0; border-bottom: 1px solid #374151;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                            <tr>
+                                                <td style="font-size: 14px; font-weight: 700; color: #c9a84c; padding-bottom: 4px;">Monthly Repayment</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 24px; font-weight: 700; color: #ffffff;">${monthlyRepayment}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 20px 0; border-bottom: 1px solid #374151;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                            <tr>
+                                                <td style="font-size: 14px; font-weight: 700; color: #c9a84c; padding-bottom: 4px;">Stamp Duty</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 24px; font-weight: 700; color: #ffffff;">${stampDuty}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 32px 0;">
+                                <tr>
+                                    <td align="center" style="padding: 0;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                                            <tr>
+                                                <td style="background-color: #c9a84c; border-radius: 6px;">
+                                                    <a href="${verificationUrl}" target="_blank" style="display: inline-block; padding: 18px 48px; font-size: 18px; font-weight: 700; color: #0a1628; text-decoration: none; border-radius: 6px;">Verify My Email &amp; Get Full Report</a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin: 32px 0 0 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Once verified, you'll receive your complete personalized property report with detailed insights and recommendations.</p>
+
+                            <p style="margin: 24px 0 0 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Best regards,<br><span style="color: #c9a84c; font-weight: 700;">The LuxHunter Team</span></p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 32px 40px; text-align: center; border-top: 1px solid #374151;">
+                            <p style="margin: 0 0 16px 0; font-size: 13px; line-height: 1.6; color: #9ca3af;">
+                                <a href="${appUrl}/privacy-policy" style="color: #c9a84c; text-decoration: none;">Privacy Policy</a>
+                                <span style="color: #6b7280; margin: 0 8px;">|</span>
+                                <a href="${appUrl}/terms-of-service" style="color: #c9a84c; text-decoration: none;">Terms of Service</a>
+                            </p>
+                            <p style="margin: 0; font-size: 11px; color: #6b7280;">© 2026 LuxHunter. All rights reserved.</p>
+                        </td>
+                    </tr>
+
                 </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-        </html>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
       `;
     } else if (type === "report") {
       const unsubscribeUrl = `${appUrl}/unsubscribe?email=${encodeURIComponent(email)}`;
