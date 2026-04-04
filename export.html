@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuxHunter - Premium Property & Mortgage Advisory Services Australia</title>
+    <meta name="description" content="LuxHunter provides expert property advisory and mortgage strategy services across Sydney, Melbourne, Brisbane, Perth and Adelaide. Calculate your borrowing capacity and find your dream property today.">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #0A1628;
+            color: #fff;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Navigation */
+        nav {
+            background: #0A1628;
+            border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 50;
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 80px;
+        }
+
+        nav .logo img {
+            height: 80px;
+            width: auto;
+        }
+
+        nav .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        nav .nav-links a {
+            color: #d1d5db;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: color 0.3s;
+        }
+
+        nav .nav-links a:hover {
+            color: #C9A84C;
+        }
+
+        nav .cta-button {
+            padding: 0.5rem 1.5rem;
+            background: #C9A84C;
+            color: #0A1628;
+            font-weight: 600;
+            border-radius: 0.375rem;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+
+        nav .cta-button:hover {
+            background: #d4b865;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(rgba(10, 22, 40, 0.7), rgba(10, 22, 40, 0.85)), url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920');
+            background-size: cover;
+            background-position: center;
+            min-height: 600px;
+            padding-top: 128px;
+            padding-bottom: 80px;
+        }
+
+        .hero h1 {
+            font-size: 3.75rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: #d1d5db;
+            text-align: center;
+            max-width: 672px;
+            margin: 0 auto 2rem;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 3rem;
+        }
+
+        .primary-btn {
+            padding: 1rem 2rem;
+            background: #C9A84C;
+            color: #0A1628;
+            font-weight: 700;
+            font-size: 1.125rem;
+            border-radius: 0.375rem;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .primary-btn:hover {
+            background: #d4b865;
+            transform: scale(1.05);
+        }
+
+        /* Calculator Section */
+        .calculator {
+            background: linear-gradient(135deg, rgba(201, 168, 76, 0.1), rgba(201, 168, 76, 0.05));
+            border: 1px solid rgba(201, 168, 76, 0.3);
+            border-radius: 1rem;
+            padding: 2.5rem;
+            max-width: 896px;
+            margin: 0 auto;
+        }
+
+        .calculator h2 {
+            text-align: center;
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .calculator-icon {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .calculator-icon svg {
+            width: 32px;
+            height: 32px;
+            color: #C9A84C;
+        }
+
+        .calculator p {
+            text-align: center;
+            color: #d1d5db;
+            margin-bottom: 2rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            color: #C9A84C;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(201, 168, 76, 0.3);
+            border-radius: 0.375rem;
+            color: #fff;
+            font-size: 0.875rem;
+        }
+
+        .form-group input::placeholder {
+            color: #6b7280;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #C9A84C;
+        }
+
+        .calculate-btn {
+            text-align: center;
+        }
+
+        .calculate-btn button {
+            padding: 1rem 2.5rem;
+            background: #C9A84C;
+            color: #0A1628;
+            font-weight: 700;
+            font-size: 1.125rem;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .calculate-btn button:hover {
+            background: #d4b865;
+            transform: scale(1.05);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 5rem 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-header h2 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .section-header p {
+            font-size: 1.25rem;
+            color: #9ca3af;
+        }
+
+        /* Property Grid */
+        .property-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-bottom: 5rem;
+        }
+
+        .property-card {
+            background: #0D1F35;
+            border: 1px solid rgba(201, 168, 76, 0.2);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .property-card:hover {
+            border-color: #C9A84C;
+            transform: translateY(-8px);
+        }
+
+        .property-card-image {
+            position: relative;
+            height: 256px;
+            overflow: hidden;
+        }
+
+        .property-card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s;
+        }
+
+        .property-card:hover .property-card-image img {
+            transform: scale(1.1);
+        }
+
+        .property-tag {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(201, 168, 76, 0.9);
+            color: #0A1628;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .property-location {
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            background: rgba(10, 22, 40, 0.8);
+            backdrop-filter: blur(4px);
+            color: #fff;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 700;
+        }
+
+        .property-card-content {
+            padding: 1.5rem;
+        }
+
+        .property-card-content h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .property-card-content p {
+            color: #d1d5db;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .property-card-content a {
+            color: #C9A84C;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .property-card-content a:hover {
+            color: #d4b865;
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(201, 168, 76, 0.2);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: #C9A84C;
+            transform: scale(1.05);
+        }
+
+        .feature-icon {
+            padding: 0.75rem;
+            background: rgba(201, 168, 76, 0.1);
+            border-radius: 9999px;
+            width: fit-content;
+            margin-bottom: 1rem;
+        }
+
+        .feature-icon svg {
+            width: 28px;
+            height: 28px;
+            color: #C9A84C;
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-card p {
+            color: #9ca3af;
+        }
+
+        /* Testimonials Grid */
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-bottom: 5rem;
+        }
+
+        .testimonial-card {
+            background: #0D1F35;
+            border-left: 4px solid #C9A84C;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            transition: transform 0.3s;
+        }
+
+        .testimonial-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .stars {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .star {
+            width: 18px;
+            height: 18px;
+            fill: #C9A84C;
+            color: #C9A84C;
+        }
+
+        .testimonial-card blockquote {
+            color: #d1d5db;
+            font-style: italic;
+            margin-bottom: 1rem;
+        }
+
+        .testimonial-author {
+            font-weight: 700;
+        }
+
+        .testimonial-location {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(to bottom, transparent, rgba(201, 168, 76, 0.1));
+            padding: 5rem 0;
+            text-align: center;
+        }
+
+        .cta-section h2 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        .cta-section p {
+            font-size: 1.25rem;
+            color: #d1d5db;
+            max-width: 672px;
+            margin: 0 auto 2rem;
+        }
+
+        /* FAQ Section */
+        .faq-section {
+            background: linear-gradient(to bottom, transparent, rgba(201, 168, 76, 0.05));
+            padding: 5rem 0;
+        }
+
+        .faq-container {
+            max-width: 896px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(201, 168, 76, 0.2);
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            width: 100%;
+            text-align: left;
+            padding: 1.25rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1.125rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .faq-question:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .faq-answer {
+            padding: 0 1.5rem 1.25rem;
+            color: #d1d5db;
+            border-top: 1px solid rgba(201, 168, 76, 0.2);
+            padding-top: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Newsletter Section */
+        .newsletter-section {
+            background: #0A1628;
+            border-top: 1px solid rgba(201, 168, 76, 0.2);
+            padding: 4rem 0;
+        }
+
+        .newsletter-container {
+            max-width: 768px;
+            margin: 0 auto;
+        }
+
+        .newsletter-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .newsletter-icon {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .newsletter-icon svg {
+            width: 32px;
+            height: 32px;
+            color: #C9A84C;
+        }
+
+        .newsletter-header h2 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .newsletter-header p {
+            color: #9ca3af;
+        }
+
+        .newsletter-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .newsletter-form input {
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(201, 168, 76, 0.3);
+            border-radius: 0.375rem;
+            color: #fff;
+        }
+
+        .newsletter-form input::placeholder {
+            color: #6b7280;
+        }
+
+        .newsletter-form input:focus {
+            outline: none;
+            border-color: #C9A84C;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #d1d5db;
+            cursor: pointer;
+        }
+
+        .checkbox-label:hover {
+            color: #fff;
+        }
+
+        .checkbox-label input {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        .newsletter-submit {
+            width: 100%;
+            padding: 0.75rem 2rem;
+            background: #C9A84C;
+            color: #0A1628;
+            font-weight: 600;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .newsletter-submit:hover {
+            background: #d4b865;
+        }
+
+        /* Footer */
+        footer {
+            background: #0A1628;
+            border-top: 1px solid rgba(201, 168, 76, 0.2);
+        }
+
+        .footer-seo {
+            background: #081221;
+            border-bottom: 1px solid rgba(201, 168, 76, 0.1);
+            padding: 2rem 0;
+        }
+
+        .footer-seo-cities {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-seo-cities p {
+            color: #C9A84C;
+            font-size: 0.875rem;
+        }
+
+        .footer-seo-desc {
+            text-align: center;
+        }
+
+        .footer-seo-desc p {
+            color: #6b7280;
+            font-size: 0.75rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-disclaimer {
+            padding: 1.5rem 0;
+            border-bottom: 1px solid rgba(201, 168, 76, 0.1);
+        }
+
+        .footer-disclaimer p {
+            color: rgba(201, 168, 76, 0.7);
+            font-size: 0.75rem;
+            text-align: center;
+            max-width: 896px;
+            margin: 0 auto;
+        }
+
+        .footer-main {
+            padding: 2rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .footer-left img {
+            height: 64px;
+            width: auto;
+        }
+
+        .footer-left p {
+            color: #9ca3af;
+            font-size: 0.875rem;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .footer-links a {
+            color: #9ca3af;
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: #C9A84C;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .form-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .property-grid,
+            .testimonials-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            nav .nav-links {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .form-grid,
+            .property-grid,
+            .features-grid,
+            .testimonials-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-main {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <div class="logo">
+                <a href="#home">
+                    <img src="https://files.catbox.moe/4q65bc.jpg" alt="LuxHunter - Premium Property Services">
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="#home">Home</a>
+                <a href="#services">Services</a>
+                <a href="#calculator">Calculator</a>
+                <a href="#about">About</a>
+                <a href="#contact">Contact</a>
+                <a href="#newsletter" class="cta-button">Get Free Report</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="container">
+            <h1>Find Your Dream Property<br>with Expert Guidance</h1>
+            <p>Navigate Australia's property market with confidence. Expert mortgage advisory and property insights tailored to your goals.</p>
+            <div class="hero-buttons">
+                <a href="#newsletter" class="primary-btn">Get Your Free Property Report</a>
+            </div>
+
+            <!-- Calculator -->
+            <div id="calculator" class="calculator">
+                <div class="calculator-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="14"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
+                </div>
+                <h2>Your Borrowing Capacity</h2>
+                <p>Calculate your borrowing capacity in seconds</p>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Annual Income</label>
+                        <input type="number" placeholder="120000">
+                    </div>
+                    <div class="form-group">
+                        <label>Deposit Amount</label>
+                        <input type="number" placeholder="100000">
+                    </div>
+                    <div class="form-group">
+                        <label>Loan Term (years)</label>
+                        <select>
+                            <option value="15">15 years</option>
+                            <option value="20">20 years</option>
+                            <option value="25">25 years</option>
+                            <option value="30" selected>30 years</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>State</label>
+                        <select>
+                            <option value="NSW">NSW</option>
+                            <option value="VIC">VIC</option>
+                            <option value="QLD">QLD</option>
+                            <option value="WA">WA</option>
+                            <option value="SA">SA</option>
+                            <option value="TAS">TAS</option>
+                            <option value="ACT">ACT</option>
+                            <option value="NT">NT</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Postcode</label>
+                        <input type="text" placeholder="2000" maxlength="4">
+                    </div>
+                </div>
+
+                <div class="calculate-btn">
+                    <button onclick="alert('Enter your details to calculate your borrowing capacity')">Calculate Now</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Properties -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Featured Properties</h2>
+                <p>Discover premium properties curated for discerning buyers</p>
+            </div>
+            <div class="property-grid">
+                <div class="property-card">
+                    <div class="property-card-image">
+                        <img src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600" alt="Luxury Waterfront">
+                        <div class="property-tag">Premium Location</div>
+                        <div class="property-location">Sydney, NSW</div>
+                    </div>
+                    <div class="property-card-content">
+                        <h3>Luxury Waterfront</h3>
+                        <p>Stunning waterfront property with panoramic harbour views in prime Sydney location</p>
+                        <a href="#contact">Enquire Now →</a>
+                    </div>
+                </div>
+                <div class="property-card">
+                    <div class="property-card-image">
+                        <img src="https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=600" alt="Modern Apartment">
+                        <div class="property-tag">City Living</div>
+                        <div class="property-location">Melbourne, VIC</div>
+                    </div>
+                    <div class="property-card-content">
+                        <h3>Modern Apartment</h3>
+                        <p>Contemporary apartment in Melbourne's vibrant CBD with world-class amenities</p>
+                        <a href="#contact">Enquire Now →</a>
+                    </div>
+                </div>
+                <div class="property-card">
+                    <div class="property-card-image">
+                        <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600" alt="Riverside Estate">
+                        <div class="property-tag">Family Home</div>
+                        <div class="property-location">Brisbane, QLD</div>
+                    </div>
+                    <div class="property-card-content">
+                        <h3>Riverside Estate</h3>
+                        <p>Spacious family home along the Brisbane River with private garden and pool</p>
+                        <a href="#contact">Enquire Now →</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Latest Insights -->
+            <div class="section-header">
+                <h2>Latest Insights</h2>
+                <p>Stay informed with our expert analysis and market updates</p>
+            </div>
+            <div class="property-grid">
+                <div class="property-card">
+                    <div class="property-card-image">
+                        <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600" alt="Market Update">
+                        <div class="property-tag">Market Update</div>
+                    </div>
+                    <div class="property-card-content">
+                        <p style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.75rem;">March 2026</p>
+                        <h3>Sydney Property Prices Hit New Records</h3>
+                        <p>Sydney's median house price reaches unprecedented levels as demand continues to outpace supply across premium suburbs.</p>
+                        <a href="#contact">Read More →</a>
+                    </div>
+                </div>
+                <div class="property-card">
+                    <div class="property-card-image">
+                        <img src="https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=600" alt="Finance Tips">
+                        <div class="property-tag">Finance Tips</div>
+                    </div>
+                    <div class="property-card-content">
+                        <p style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.75rem;">February 2026</p>
+                        <h3>Maximising Your Borrowing Capacity</h3>
+                        <p>Learn proven strategies to improve your borrowing power and secure better loan terms from Australian lenders.</p>
+                        <a href="#contact">Read More →</a>
+                    </div>
+                </div>
+                <div class="property-card">
+                    <div class="property-card-image">
+                        <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600" alt="Investment">
+                        <div class="property-tag">Investment</div>
+                    </div>
+                    <div class="property-card-content">
+                        <p style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.75rem;">January 2026</p>
+                        <h3>Top Investment Suburbs for 2026</h3>
+                        <p>Our expert analysis reveals the Australian suburbs poised for growth and strong rental yields in the year ahead.</p>
+                        <a href="#contact">Read More →</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Testimonials -->
+            <div class="section-header">
+                <h2>Client Success Stories</h2>
+                <p>Hear from clients who achieved their property goals with LuxHunter</p>
+            </div>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="stars">
+                        <svg class="star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        <svg class="star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        <svg class="star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        <svg class="star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        <svg class="star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    </div>
+                    <blockquote>"LuxHunter made buying our first home stress-free. Their expertise in navigating Sydney's market was invaluable. We secured our dream property within budget!"</blockquote>
+                    <div class="testimonial-author">Sarah Chen</div>
+                    <div class="testimonial-location">Sydney, NSW</div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="stars">
+                        <svg class="star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        <svg class="star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        <svg class="star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        <svg class="star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        <svg class="star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    </div>
+                    <blockquote>"The mortgage strategy advice saved us thousands. LuxHunter's team secured us an exceptional rate and their service was outstanding throughout."</blockquote>
+                    <div class="testimonial-author">James Wilson</div>
+                    <div class="testimonial-location">Melbourne, VIC</div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="stars">
+                        <svg class="star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        <svg class="star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        <svg class="star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        <svg class="star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        <svg class="star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    </div>
+                    <blockquote>"Building our investment portfolio with LuxHunter's guidance has been transformative. Their market insights and connections are unmatched."</blockquote>
+                    <div class="testimonial-author">Michelle Zhang</div>
+                    <div class="testimonial-location">Brisbane, QLD</div>
+                </div>
+            </div>
+
+            <!-- Services -->
+            <div id="services" class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    </div>
+                    <h3>Property Advisory</h3>
+                    <p>Expert guidance to find and secure premium properties that match your investment goals and lifestyle needs.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="14"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
+                    </div>
+                    <h3>Mortgage Strategy</h3>
+                    <p>Optimise your borrowing capacity and secure competitive rates through our licensed mortgage partner Ribbon Finance.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    </div>
+                    <h3>Investment Analysis</h3>
+                    <p>Data-driven insights and market analysis to help you make informed property investment decisions.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                    </div>
+                    <h3>Commercial Finance</h3>
+                    <p>Specialised commercial property financing solutions for business expansion and investment opportunities.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2>Ready to Find Your Dream Property?</h2>
+            <p>Let our experts guide you through every step of your property journey. Get your free personalised property report today.</p>
+            <a href="#newsletter" class="primary-btn">Get Your Free Property Report</a>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="about" class="faq-section">
+        <div class="container">
+            <div class="faq-container">
+                <div class="section-header">
+                    <h2>Common Questions</h2>
+                    <p>Find answers to frequently asked questions about our services</p>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block'">
+                        How much can I borrow for a home loan in Australia?
+                        <span>▼</span>
+                    </button>
+                    <div class="faq-answer" style="display: none;">
+                        Your borrowing capacity depends on your income, expenses, deposit, and the lender's assessment. As a general guide, lenders will typically loan up to 6x your annual income, subject to responsible lending checks. Use our borrowing calculator above for a personalised estimate.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block'">
+                        What deposit do I need to buy a property in Australia?
+                        <span>▼</span>
+                    </button>
+                    <div class="faq-answer" style="display: none;">
+                        Most lenders require a minimum 5–10% deposit. With less than 20% deposit, you'll typically need to pay Lenders Mortgage Insurance (LMI). A 20% deposit avoids LMI and gives you access to more competitive rates. First home buyers may also qualify for government grants and stamp duty exemptions.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block'">
+                        What is stamp duty and do I have to pay it?
+                        <span>▼</span>
+                    </button>
+                    <div class="faq-answer" style="display: none;">
+                        Stamp duty (also called transfer duty) is a state government tax paid when you purchase property. The amount varies by state and property value. First home buyers may be eligible for concessions or full exemptions. Our stamp duty calculator shows the exact amount for each Australian state.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block'">
+                        What's the difference between fixed and variable home loans?
+                        <span>▼</span>
+                    </button>
+                    <div class="faq-answer" style="display: none;">
+                        A fixed rate loan locks your interest rate for a set period (usually 1–5 years), giving you certainty on repayments. A variable rate loan moves with market changes — rates can go up or down. Many borrowers choose a split loan combining both. Our advisers can help you choose the right structure.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block'">
+                        Does LuxHunter hold an Australian Credit Licence?
+                        <span>▼</span>
+                    </button>
+                    <div class="faq-answer" style="display: none;">
+                        LuxHunter operates as a property advisory service and does not hold an Australian Credit Licence (ACL). All credit assistance and official loan applications are provided through our licensed partner, Ribbon Finance Mortgage Management Pty Ltd (ACL 525880). Any personalised credit advice will be provided by Ribbon Finance in compliance with the National Consumer Credit Protection Act 2009.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section id="newsletter" class="newsletter-section">
+        <div class="container">
+            <div class="newsletter-container">
+                <div class="newsletter-header">
+                    <div class="newsletter-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m2 7 8.97 5.7a1.94 1.94 0 0 0 2.06 0L22 7"/></svg>
+                    </div>
+                    <h2>Stay Informed</h2>
+                    <p>Subscribe to receive exclusive property insights and market updates</p>
+                </div>
+
+                <form class="newsletter-form" onsubmit="alert('Thank you for subscribing! Check your email for confirmation.'); return false;">
+                    <div class="form-row">
+                        <input type="text" placeholder="Your Name" required>
+                        <input type="email" placeholder="Your Email" required>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox">
+                            <span>Property market news and investment opportunities</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox">
+                            <span>Personal loan updates and interest rate changes</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox">
+                            <span>Commercial loan updates and business finance insights</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="newsletter-submit">Subscribe Now</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="contact">
+        <div class="footer-seo">
+            <div class="container">
+                <div class="footer-seo-cities">
+                    <p>Property Advisory Sydney | Property Advisory Melbourne | Property Advisory Brisbane | Property Advisory Perth | Property Advisory Adelaide | Mortgage Broker Sydney | Mortgage Broker Melbourne | Home Loans Australia</p>
+                </div>
+                <div class="footer-seo-desc">
+                    <p>LuxHunter provides expert property advisory and mortgage strategy services across Sydney, Melbourne, Brisbane, Perth and Adelaide. Our licensed partner Ribbon Finance (ACL 525880) helps Australian home buyers, investors and upgraders access competitive home loans, investment loans and commercial finance. Whether you're buying your first home, refinancing, or growing a property portfolio, LuxHunter is your trusted guide to Australian property.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="footer-disclaimer">
+                <p>LuxHunter is a property advisory service and does not hold an Australian Credit Licence. All credit assistance and official loan applications are facilitated through our licensed partner, Ribbon Finance Mortgage Management Pty Ltd (ACL 525880). Any personalised credit advice will be provided by Ribbon Finance in accordance with the National Consumer Credit Protection Act 2009. LuxHunter provides general property information and guidance only.</p>
+            </div>
+
+            <div class="footer-main">
+                <div class="footer-left">
+                    <img src="https://files.catbox.moe/4q65bc.jpg" alt="LuxHunter">
+                    <p>© 2026 LuxHunter. All rights reserved.</p>
+                </div>
+                <div class="footer-links">
+                    <a href="#privacy">Privacy Policy</a>
+                    <a href="#terms">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
