@@ -26,8 +26,6 @@ const CalculatorVerificationModal: React.FC<CalculatorVerificationModalProps> = 
   const { language } = useLanguage();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [preferredContact, setPreferredContact] = useState('email');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
@@ -46,10 +44,8 @@ const CalculatorVerificationModal: React.FC<CalculatorVerificationModalProps> = 
       const leadData = {
         name: fullName,
         email,
-        phone,
         state: calculatorResults.state,
         source: 'Calculator',
-        preferredContact,
         propertyPrice,
         deposit: parseFloat(calculatorResults.deposit),
         loanTerm: parseInt(calculatorResults.loanTerm),
@@ -185,32 +181,6 @@ const CalculatorVerificationModal: React.FC<CalculatorVerificationModalProps> = 
               required
               className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white placeholder-gray-500 focus:outline-none focus:border-[#C9A84C] transition-colors"
             />
-          </div>
-
-          <div>
-            <input
-              type="tel"
-              placeholder={language === 'en' ? 'Phone Number' : '电话号码'}
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
-              className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white placeholder-gray-500 focus:outline-none focus:border-[#C9A84C] transition-colors"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">
-              {language === 'en' ? 'Preferred Contact Method' : '首选联系方式'}
-            </label>
-            <select
-              value={preferredContact}
-              onChange={(e) => setPreferredContact(e.target.value)}
-              required
-              className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white focus:outline-none focus:border-[#C9A84C] transition-colors [&>option]:text-gray-900 [&>option]:bg-white"
-            >
-              <option value="email">{language === 'en' ? 'Email' : '电子邮件'}</option>
-              <option value="phone">{language === 'en' ? 'Phone' : '电话'}</option>
-            </select>
           </div>
 
           {error && (
