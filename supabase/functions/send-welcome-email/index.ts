@@ -85,7 +85,7 @@ Deno.serve(async (req: Request) => {
         ? Number(leadData.stampDuty).toLocaleString("en-AU", { style: "currency", currency: "AUD" })
         : 'N/A';
 
-      let htmlTemplate = await Deno.readTextFile("../../src/templates/welcome-email.html");
+      let htmlTemplate = await Deno.readTextFile("./welcome-email.html");
 
       htmlTemplate = htmlTemplate.replace(/{{name}}/g, displayName);
       htmlTemplate = htmlTemplate.replace(/{{borrowingCapacity}}/g, borrowingCapacity);
