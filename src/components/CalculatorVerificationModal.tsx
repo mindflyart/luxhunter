@@ -5,6 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 interface CalculatorVerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onVerificationSent?: () => void;
   calculatorResults: {
     borrowingCapacity: number;
     monthlyRepayment: number;
@@ -21,6 +22,7 @@ interface CalculatorVerificationModalProps {
 const CalculatorVerificationModal: React.FC<CalculatorVerificationModalProps> = ({
   isOpen,
   onClose,
+  onVerificationSent,
   calculatorResults
 }) => {
   const { language } = useLanguage();
@@ -78,6 +80,9 @@ const CalculatorVerificationModal: React.FC<CalculatorVerificationModalProps> = 
       }
 
       setSubmitted(true);
+      if (onVerificationSent) {
+        onVerificationSent();
+      }
     } catch (err) {
       console.error('Error submitting form:', err);
       setError(language === 'en' ? 'Failed to send verification email. Please try again.' : '发送验证邮件失败。请重试。');

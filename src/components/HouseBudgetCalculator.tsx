@@ -46,6 +46,7 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
   const [stampDutyDetails, setStampDutyDetails] = useState<any>(null);
   const [showResults, setShowResults] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
 
   useEffect(() => {
     const savedData = localStorage.getItem('luxhunter_calculator');
@@ -122,7 +123,6 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
     };
 
     setResults(calculatedResults);
-    setShowResults(true);
     setShowVerificationModal(true);
   };
 
@@ -141,11 +141,23 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
     }).format(amount);
   };
 
+  const handleVerificationComplete = () => {
+    setIsVerified(true);
+    setShowResults(true);
+    setShowVerificationModal(false);
+  };
+
   return (
     <>
       <CalculatorVerificationModal
         isOpen={showVerificationModal}
-        onClose={() => setShowVerificationModal(false)}
+        onClose={() => {
+          setShowVerificationModal(false);
+          if (isVerified) {
+            setShowResults(true);
+          }
+        }}
+        onVerificationSent={handleVerificationComplete}
         calculatorResults={{
           ...results!,
           postcode,
@@ -274,22 +286,6 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
           </div>
           <div>
             <label className="block text-[#C9A84C] font-semibold mb-2">
-              {language === 'en' ? 'Postcode' : '邮编'}
-            </label>
-            <input
-              type="text"
-              value={postcode}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-                setPostcode(value);
-              }}
-              maxLength={4}
-              placeholder="2000"
-              className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white placeholder-gray-500 focus:outline-none focus:border-[#C9A84C] transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-[#C9A84C] font-semibold mb-2">
               {language === 'en' ? 'Property Type' : '物业类型'}
             </label>
             <select
@@ -312,7 +308,7 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
               className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white focus:outline-none focus:border-[#C9A84C] transition-colors [&>option]:text-gray-900 [&>option]:bg-white"
             >
               <option value="First Home Buyer">First Home Buyer</option>
-              <option value="Owner Occupied">Owner Occupied</option>
+              <option value="Owner Occupied">Owner Occupied (not first home)</option>
               <option value="Investor">Investor</option>
               <option value="Foreign Buyer">Foreign Buyer</option>
             </select>
@@ -376,49 +372,73 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
           </div>
         )}
 
-        {showResults && !stampDutyDetails && (!propertyPrice || parseFloat(propertyPrice) <= 0) && (
-          <div className="mb-6 p-4 rounded-lg bg-yellow-900/20 border border-yellow-500/50">
-            <p className="text-yellow-300 text-center">
-              {language === 'en' ? 'Enter property purchase price to calculate stamp duty' : '输入物业购买价格以计算印花税'}
-            </p>
-          </div>
-        )}
-
-        {stampDutyDetails && showResults && (
-          <div className="mb-6 p-6 rounded-lg bg-[#0D1F35]/50 border border-[#C9A84C]/30">
-            <h3 className="text-xl font-bold text-white mb-4">
-              {language === 'en' ? 'Stamp Duty Breakdown' : '印花税明细'}
-            </h3>
-            <div className="space-y-3">
-              {stampDutyDetails.standardDuty > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">{language === 'en' ? 'Standard Duty Amount:' : '标准印花税：'}</span>
-                  <span className="text-white font-semibold">{formatCurrency(stampDutyDetails.standardDuty)}</span>
+        {showResults && results && (
+          <>
+            <div className="mb-6 p-6 rounded-lg bg-[#0D1F35]/50 border border-[#C9A84C]/30">
+              <h3 className="text-2xl font-bold text-white mb-6">
+                {language === 'en' ? 'Your Results' : '您的结果'}
+              </h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center pb-4 border-b border-[#C9A84C]/20">
+                  <span className="text-gray-300 text-lg">{language === 'en' ? 'Borrowing Power:' : '借款能力：'}</span>
+                  <span className="text-white font-bold text-2xl">{formatCurrency(results.borrowingCapacity)}</span>
                 </div>
-              )}
-              {stampDutyDetails.concessionAmount > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">{language === 'en' ? 'Concession Amount:' : '优惠金额：'}</span>
-                  <span className="text-white font-semibold">-{formatCurrency(stampDutyDetails.concessionAmount)}</span>
+                <div className="flex justify-between items-center pb-4 border-b border-[#C9A84C]/20">
+                  <span className="text-gray-300 text-lg">{language === 'en' ? 'Monthly Repayment:' : '每月还款：'}</span>
+                  <span className="text-white font-bold text-2xl">{formatCurrency(results.monthlyRepayment)}/mo</span>
                 </div>
-              )}
-              <div className="flex justify-between items-center pt-3 border-t border-[#C9A84C]/30">
-                <span className="text-[#C9A84C] font-bold">{language === 'en' ? 'Final Duty Payable:' : '最终应付印花税：'}</span>
-                <span className="text-[#C9A84C] font-bold text-xl">{formatCurrency(stampDutyDetails.amount)}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300 text-lg">{language === 'en' ? 'Stamp Duty (on purchase price):' : '印花税（基于购买价格）：'}</span>
+                  <span className="text-[#C9A84C] font-bold text-2xl">{formatCurrency(results.stampDuty)}</span>
+                </div>
               </div>
-              {stampDutyDetails.savingsAmount > 0 && (
-                <div className="flex justify-between items-center p-3 bg-[#C9A84C]/10 rounded">
-                  <span className="text-[#C9A84C] font-semibold">{language === 'en' ? 'You Save:' : '您节省：'}</span>
-                  <span className="text-[#C9A84C] font-bold text-lg">{formatCurrency(stampDutyDetails.savingsAmount)}</span>
-                </div>
-              )}
-              {stampDutyDetails.eligibilityMessage && (
-                <div className="mt-4 p-3 bg-white/5 rounded border border-[#C9A84C]/20">
-                  <p className="text-sm text-gray-300">{stampDutyDetails.eligibilityMessage}</p>
-                </div>
-              )}
             </div>
-          </div>
+
+            {!stampDutyDetails && (!propertyPrice || parseFloat(propertyPrice) <= 0) && (
+              <div className="mb-6 p-4 rounded-lg bg-yellow-900/20 border border-yellow-500/50">
+                <p className="text-yellow-300 text-center">
+                  {language === 'en' ? 'Enter property purchase price above to calculate stamp duty' : '在上方输入物业购买价格以计算印花税'}
+                </p>
+              </div>
+            )}
+
+            {stampDutyDetails && (
+              <div className="mb-6 p-6 rounded-lg bg-[#0D1F35]/50 border border-[#C9A84C]/30">
+                <h3 className="text-xl font-bold text-white mb-4">
+                  {language === 'en' ? 'Stamp Duty Breakdown' : '印花税明细'}
+                </h3>
+                <div className="space-y-3">
+                  {stampDutyDetails.standardDuty > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">{language === 'en' ? 'Standard Duty Amount:' : '标准印花税：'}</span>
+                      <span className="text-white font-semibold">{formatCurrency(stampDutyDetails.standardDuty)}</span>
+                    </div>
+                  )}
+                  {stampDutyDetails.concessionAmount > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">{language === 'en' ? 'Concession Amount:' : '优惠金额：'}</span>
+                      <span className="text-white font-semibold">-{formatCurrency(stampDutyDetails.concessionAmount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center pt-3 border-t border-[#C9A84C]/30">
+                    <span className="text-[#C9A84C] font-bold">{language === 'en' ? 'Final Duty Payable:' : '最终应付印花税：'}</span>
+                    <span className="text-[#C9A84C] font-bold text-xl">{formatCurrency(stampDutyDetails.amount)}</span>
+                  </div>
+                  {stampDutyDetails.savingsAmount > 0 && (
+                    <div className="flex justify-between items-center p-3 bg-[#C9A84C]/10 rounded">
+                      <span className="text-[#C9A84C] font-semibold">{language === 'en' ? 'You Save:' : '您节省：'}</span>
+                      <span className="text-[#C9A84C] font-bold text-lg">{formatCurrency(stampDutyDetails.savingsAmount)}</span>
+                    </div>
+                  )}
+                  {stampDutyDetails.eligibilityMessage && (
+                    <div className="mt-4 p-3 bg-white/5 rounded border border-[#C9A84C]/20">
+                      <p className="text-sm text-gray-300">{stampDutyDetails.eligibilityMessage}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
           <div className="text-center mb-6">
