@@ -76,16 +76,27 @@ Deno.serve(async (req: Request) => {
       const displayName = name || 'Valued Client';
 
       const borrowingCapacity = leadData?.borrowingCapacity
-        ? Number(leadData.borrowingCapacity).toLocaleString("en-AU", { style: "currency", currency: "AUD" })
+        ? Number(leadData.borrowingCapacity).toLocaleString("en-AU", { style: "currency", currency: "AUD", minimumFractionDigits: 0 })
         : 'N/A';
       const monthlyRepayment = leadData?.monthlyRepayment
-        ? Number(leadData.monthlyRepayment).toLocaleString("en-AU", { style: "currency", currency: "AUD" })
+        ? Number(leadData.monthlyRepayment).toLocaleString("en-AU", { style: "currency", currency: "AUD", minimumFractionDigits: 0 })
         : 'N/A';
       const stampDuty = leadData?.stampDuty
-        ? Number(leadData.stampDuty).toLocaleString("en-AU", { style: "currency", currency: "AUD" })
+        ? Number(leadData.stampDuty).toLocaleString("en-AU", { style: "currency", currency: "AUD", minimumFractionDigits: 0 })
         : 'N/A';
 
-      emailSubject = "Verify Your Email - Unlock Your Property Report";
+      const propertyPrice = leadData?.propertyPrice
+        ? Number(leadData.propertyPrice).toLocaleString("en-AU", { style: "currency", currency: "AUD", minimumFractionDigits: 0 })
+        : null;
+      const deposit = leadData?.deposit
+        ? Number(leadData.deposit).toLocaleString("en-AU", { style: "currency", currency: "AUD", minimumFractionDigits: 0 })
+        : null;
+      const loanTerm = leadData?.loanTerm ? `${leadData.loanTerm} years` : null;
+      const location = leadData?.postcode && leadData?.state ? `${leadData.postcode}, ${leadData.state}` : null;
+
+      const calendlyUrl = "https://calendly.com/luxhunter";
+
+      emailSubject = "Your Complete Borrowing Capacity Results";
       emailHtml = `
 <!DOCTYPE html>
 <html lang="en">
@@ -93,7 +104,7 @@ Deno.serve(async (req: Request) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Verify Your Email - LuxHunter</title>
+    <title>Your Complete Results - LuxHunter</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0a1628;">
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #0a1628;">
@@ -102,64 +113,62 @@ Deno.serve(async (req: Request) => {
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px; background-color: #0a1628;">
 
                     <tr>
-                        <td style="padding: 32px 40px; text-align: center;">
-                            <span style="font-size: 24px; font-weight: 700; color: #c9a84c; letter-spacing: 2px;">LUXHUNTER</span>
-                            <p style="margin: 8px 0 0 0; font-size: 13px; color: #ffffff; letter-spacing: 0.5px;">Premium Property &amp; Mortgage Advisory</p>
+                        <td style="padding: 32px 40px; text-align: center; border-bottom: 3px solid #c9a84c;">
+                            <span style="font-size: 32px; font-weight: 700; color: #c9a84c; letter-spacing: 2px;">LUXHUNTER</span>
+                            <p style="margin: 8px 0 0 0; font-size: 13px; color: #9ca3af; letter-spacing: 0.5px;">Premium Property &amp; Mortgage Advisory</p>
                         </td>
                     </tr>
 
                     <tr>
-                        <td style="padding: 0 40px 40px 40px;">
-                            <p style="margin: 0 0 24px 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Dear ${displayName},</p>
+                        <td style="padding: 40px 40px 24px 40px;">
+                            <h2 style="margin: 0 0 16px 0; font-size: 28px; font-weight: 700; color: #ffffff; text-align: center;">Your Complete Calculator Results</h2>
+                            <p style="margin: 0 0 32px 0; font-size: 16px; line-height: 1.6; color: #ccc; text-align: center;">Dear ${displayName},</p>
+                            <p style="margin: 0 0 32px 0; font-size: 16px; line-height: 1.6; color: #ccc;">Thank you for using the LuxHunter Borrowing Capacity Calculator. Here are your complete results:</p>
 
-                            <p style="margin: 0 0 32px 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Thank you for using the LuxHunter Borrowing Capacity Calculator. Here are your preliminary results:</p>
-
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 32px; border-top: 1px solid #374151;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 32px; background: #1e3a5f; padding: 24px; border-radius: 8px; border: 2px solid #c9a84c;">
                                 <tr>
-                                    <td style="padding: 20px 0; border-bottom: 1px solid #374151;">
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                                            <tr>
-                                                <td style="font-size: 14px; font-weight: 700; color: #c9a84c; padding-bottom: 4px;">Borrowing Capacity</td>
-                                            </tr>
-                                            <tr>
-                                                <td style="font-size: 24px; font-weight: 700; color: #ffffff;">${borrowingCapacity}</td>
-                                            </tr>
-                                        </table>
+                                    <td style="padding: 0 0 20px 0; border-bottom: 1px solid rgba(201, 168, 76, 0.2);">
+                                        <p style="margin: 0 0 4px 0; font-size: 14px; font-weight: 600; color: #c9a84c;">Borrowing Power</p>
+                                        <p style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff;">${borrowingCapacity}</p>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 20px 0; border-bottom: 1px solid #374151;">
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                                            <tr>
-                                                <td style="font-size: 14px; font-weight: 700; color: #c9a84c; padding-bottom: 4px;">Monthly Repayment</td>
-                                            </tr>
-                                            <tr>
-                                                <td style="font-size: 24px; font-weight: 700; color: #ffffff;">${monthlyRepayment}</td>
-                                            </tr>
-                                        </table>
+                                    <td style="padding: 20px 0; border-bottom: 1px solid rgba(201, 168, 76, 0.2);">
+                                        <p style="margin: 0 0 4px 0; font-size: 14px; font-weight: 600; color: #c9a84c;">Monthly Repayment</p>
+                                        <p style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff;">${monthlyRepayment}<span style="font-size: 18px; color: #9ca3af;">/mo</span></p>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 20px 0; border-bottom: 1px solid #374151;">
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                                            <tr>
-                                                <td style="font-size: 14px; font-weight: 700; color: #c9a84c; padding-bottom: 4px;">Stamp Duty</td>
-                                            </tr>
-                                            <tr>
-                                                <td style="font-size: 24px; font-weight: 700; color: #ffffff;">${stampDuty}</td>
-                                            </tr>
-                                        </table>
+                                    <td style="padding: 20px 0;">
+                                        <p style="margin: 0 0 4px 0; font-size: 14px; font-weight: 600; color: #c9a84c;">Stamp Duty</p>
+                                        <p style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff;">${stampDuty}</p>
                                     </td>
                                 </tr>
                             </table>
 
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 32px 0;">
+                            ${propertyPrice || deposit || loanTerm || location ? `
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 32px; background: rgba(201, 168, 76, 0.1); padding: 20px; border-radius: 8px;">
                                 <tr>
-                                    <td align="center" style="padding: 0;">
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                                    <td>
+                                        <p style="margin: 0 0 16px 0; font-size: 16px; font-weight: 700; color: #c9a84c;">Your Inputs</p>
+                                        ${propertyPrice ? `<p style="margin: 0 0 8px 0; font-size: 14px; color: #ccc;">Property Price: <strong style="color: #fff;">${propertyPrice}</strong></p>` : ''}
+                                        ${deposit ? `<p style="margin: 0 0 8px 0; font-size: 14px; color: #ccc;">Deposit: <strong style="color: #fff;">${deposit}</strong></p>` : ''}
+                                        ${loanTerm ? `<p style="margin: 0 0 8px 0; font-size: 14px; color: #ccc;">Loan Term: <strong style="color: #fff;">${loanTerm}</strong></p>` : ''}
+                                        ${location ? `<p style="margin: 0; font-size: 14px; color: #ccc;">Location: <strong style="color: #fff;">${location}</strong></p>` : ''}
+                                    </td>
+                                </tr>
+                            </table>
+                            ` : ''}
+
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 32px 0; background: rgba(201, 168, 76, 0.1); padding: 24px; border-radius: 8px; text-align: center;">
+                                <tr>
+                                    <td>
+                                        <h3 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #c9a84c;">Ready to Take the Next Step?</h3>
+                                        <p style="margin: 0 0 24px 0; font-size: 15px; line-height: 1.6; color: #ccc;">Book a free consultation with our expert team to discuss your personalized property strategy and mortgage options.</p>
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
                                             <tr>
-                                                <td style="background-color: #c9a84c; border-radius: 6px;">
-                                                    <a href="${verificationUrl}" target="_blank" style="display: inline-block; padding: 18px 48px; font-size: 18px; font-weight: 700; color: #0a1628; text-decoration: none; border-radius: 6px;">Verify My Email &amp; Get Full Report</a>
+                                                <td style="background: linear-gradient(135deg, #c9a84c 0%, #d4b865 100%); border-radius: 8px; box-shadow: 0 4px 16px rgba(201, 168, 76, 0.4);">
+                                                    <a href="${calendlyUrl}" target="_blank" style="display: inline-block; padding: 18px 48px; font-size: 18px; font-weight: 700; color: #0a1628; text-decoration: none; letter-spacing: 0.5px;">Book Free Consultation</a>
                                                 </td>
                                             </tr>
                                         </table>
@@ -167,18 +176,16 @@ Deno.serve(async (req: Request) => {
                                 </tr>
                             </table>
 
-                            <p style="margin: 32px 0 0 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Once verified, you'll receive your complete personalized property report with detailed insights and recommendations.</p>
-
-                            <p style="margin: 24px 0 0 0; font-size: 16px; line-height: 1.6; color: #ffffff;">Best regards,<br><span style="color: #c9a84c; font-weight: 700;">The LuxHunter Team</span></p>
+                            <p style="margin: 24px 0 0 0; font-size: 16px; line-height: 1.6; color: #ccc;">Best regards,<br><span style="color: #c9a84c; font-weight: 700;">The LuxHunter Team</span></p>
                         </td>
                     </tr>
 
                     <tr>
                         <td style="padding: 32px 40px; text-align: center; border-top: 1px solid #374151;">
                             <p style="margin: 0 0 16px 0; font-size: 13px; line-height: 1.6; color: #9ca3af;">
-                                <a href="#privacy" style="color: #c9a84c; text-decoration: none;">Privacy Policy</a>
+                                <a href="${appUrl}/privacy-policy" style="color: #c9a84c; text-decoration: none;">Privacy Policy</a>
                                 <span style="color: #6b7280; margin: 0 8px;">|</span>
-                                <a href="#terms" style="color: #c9a84c; text-decoration: none;">Terms of Service</a>
+                                <a href="${appUrl}/terms-of-service" style="color: #c9a84c; text-decoration: none;">Terms of Service</a>
                             </p>
                             <p style="margin: 0; font-size: 11px; color: #6b7280;">© 2026 LuxHunter. All rights reserved.</p>
                         </td>

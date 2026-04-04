@@ -111,28 +111,35 @@ const CalculatorVerificationModal: React.FC<CalculatorVerificationModalProps> = 
           </div>
 
           <h2 className="text-2xl font-bold text-white mb-4">
-            {language === 'en' ? 'Check Your Email!' : '检查您的邮箱！'}
+            {language === 'en' ? 'Your Results Have Been Sent!' : '您的结果已发送！'}
           </h2>
 
-          <p className="text-gray-300 mb-6">
+          <p className="text-gray-300 mb-6 leading-relaxed">
             {language === 'en'
-              ? `We've sent a verification email to ${email}. Click the link in the email to unlock your full calculator results and receive your detailed property report.`
-              : `我们已向 ${email} 发送验证邮件。点击邮件中的链接以解锁完整的计算器结果并接收详细的房产报告。`}
+              ? `Check your email inbox for your complete borrowing capacity report sent to ${email}.`
+              : `检查您的电子邮件收件箱，查看发送至 ${email} 的完整借款能力报告。`}
           </p>
 
-          <div className="bg-[#C9A84C]/10 border border-[#C9A84C]/30 rounded-lg p-4 mb-6">
-            <p className="text-sm text-gray-300">
+          <div className="bg-yellow-900/20 border border-yellow-500/50 rounded-lg p-4 mb-6">
+            <p className="text-sm text-yellow-300">
               {language === 'en'
-                ? "Didn't receive the email? Check your spam folder or try again."
-                : '没有收到邮件？检查您的垃圾邮件文件夹或重试。'}
+                ? "Don't see it? Check your spam folder."
+                : '看不到？检查您的垃圾邮件文件夹。'}
             </p>
           </div>
 
+          <a
+            href="/contact"
+            className="block w-full px-6 py-3 bg-[#C9A84C] text-[#0A1628] font-bold rounded hover:bg-[#d4b865] transition-colors text-center"
+          >
+            {language === 'en' ? 'Book a Free Consultation' : '预约免费咨询'}
+          </a>
+
           <button
             onClick={onClose}
-            className="px-6 py-3 bg-[#C9A84C] text-[#0A1628] font-bold rounded hover:bg-[#d4b865] transition-colors"
+            className="mt-4 text-gray-400 hover:text-white transition-colors text-sm"
           >
-            {language === 'en' ? 'Got It' : '知道了'}
+            {language === 'en' ? 'Close' : '关闭'}
           </button>
         </div>
       </div>
