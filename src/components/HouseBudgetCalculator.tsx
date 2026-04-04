@@ -3,7 +3,7 @@ import { Calculator, Save, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { classifyPostcode, getLVRLimits, calculateLVR, formatCurrency as formatCurr, type LocationClassification } from '../lib/postcodeClassification';
-import { calculateStampDuty as calculateStateStampDuty, type AustralianState } from '../lib/stampDuty';
+import { calculateStampDuty as calculateStateStampDuty, type AustralianState, type PropertyType, type BuyerType } from '../lib/stampDuty';
 import CalculatorVerificationModal from './CalculatorVerificationModal';
 
 interface CalculatorResults {
@@ -38,8 +38,11 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
   const [loanTerm, setLoanTerm] = useState('30');
   const [selectedState, setSelectedState] = useState('NSW');
   const [postcode, setPostcode] = useState('');
+  const [propertyType, setPropertyType] = useState<PropertyType>('Established Home');
+  const [buyerType, setBuyerType] = useState<BuyerType>('Owner Occupied');
   const [locationClassification, setLocationClassification] = useState<LocationClassification | null>(null);
   const [results, setResults] = useState<CalculatorResults | null>(null);
+  const [stampDutyDetails, setStampDutyDetails] = useState<any>(null);
   const [showResults, setShowResults] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
 
@@ -89,8 +92,16 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
     const borrowing = calculateBorrowingCapacity(income);
     const propertyValue = borrowing + depositAmount;
     const monthly = calculateMonthlyRepayment(borrowing, term);
-    const stampDutyResult = calculateStateStampDuty(propertyValue, selectedState as AustralianState, false);
+    const isFirstHomeBuyer = buyerType === 'First Home Buyer';
+    const stampDutyResult = calculateStateStampDuty(
+      propertyValue,
+      selectedState as AustralianState,
+      isFirstHomeBuyer,
+      propertyType,
+      buyerType
+    );
     const stamp = stampDutyResult.amount;
+    setStampDutyDetails(stampDutyResult);
 
     const calculatedResults: CalculatorResults = {
       borrowingCapacity: borrowing,
@@ -154,7 +165,7 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
 
         <div className="relative">
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <div>
             <label className="block text-[#C9A84C] font-semibold mb-2">
               {language === 'en' ? 'Annual Income' : '年收入'}
@@ -216,6 +227,9 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
               ))}
             </select>
           </div>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6 mb-6">
           <div>
             <label className="block text-[#C9A84C] font-semibold mb-2">
               {language === 'en' ? 'Postcode' : '邮编'}
@@ -231,6 +245,35 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
               placeholder="2000"
               className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white placeholder-gray-500 focus:outline-none focus:border-[#C9A84C] transition-colors"
             />
+          </div>
+          <div>
+            <label className="block text-[#C9A84C] font-semibold mb-2">
+              {language === 'en' ? 'Property Type' : '物业类型'}
+            </label>
+            <select
+              value={propertyType}
+              onChange={(e) => setPropertyType(e.target.value as PropertyType)}
+              className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white focus:outline-none focus:border-[#C9A84C] transition-colors [&>option]:text-gray-900 [&>option]:bg-white"
+            >
+              <option value="Established Home">Established Home</option>
+              <option value="New Build">New Build</option>
+              <option value="Vacant Land">Vacant Land</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-[#C9A84C] font-semibold mb-2">
+              {language === 'en' ? 'Buyer Type' : '买家类型'}
+            </label>
+            <select
+              value={buyerType}
+              onChange={(e) => setBuyerType(e.target.value as BuyerType)}
+              className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white focus:outline-none focus:border-[#C9A84C] transition-colors [&>option]:text-gray-900 [&>option]:bg-white"
+            >
+              <option value="First Home Buyer">First Home Buyer</option>
+              <option value="Owner Occupied">Owner Occupied</option>
+              <option value="Investor">Investor</option>
+              <option value="Foreign Buyer">Foreign Buyer</option>
+            </select>
           </div>
         </div>
 
@@ -287,6 +330,43 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
                   })()
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {stampDutyDetails && showResults && (
+          <div className="mb-6 p-6 rounded-lg bg-[#0D1F35]/50 border border-[#C9A84C]/30">
+            <h3 className="text-xl font-bold text-white mb-4">
+              {language === 'en' ? 'Stamp Duty Breakdown' : '印花税明细'}
+            </h3>
+            <div className="space-y-3">
+              {stampDutyDetails.standardDuty > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300">{language === 'en' ? 'Standard Duty Amount:' : '标准印花税：'}</span>
+                  <span className="text-white font-semibold">{formatCurrency(stampDutyDetails.standardDuty)}</span>
+                </div>
+              )}
+              {stampDutyDetails.concessionAmount > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300">{language === 'en' ? 'Concession Amount:' : '优惠金额：'}</span>
+                  <span className="text-white font-semibold">-{formatCurrency(stampDutyDetails.concessionAmount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center pt-3 border-t border-[#C9A84C]/30">
+                <span className="text-[#C9A84C] font-bold">{language === 'en' ? 'Final Duty Payable:' : '最终应付印花税：'}</span>
+                <span className="text-[#C9A84C] font-bold text-xl">{formatCurrency(stampDutyDetails.amount)}</span>
+              </div>
+              {stampDutyDetails.savingsAmount > 0 && (
+                <div className="flex justify-between items-center p-3 bg-[#C9A84C]/10 rounded">
+                  <span className="text-[#C9A84C] font-semibold">{language === 'en' ? 'You Save:' : '您节省：'}</span>
+                  <span className="text-[#C9A84C] font-bold text-lg">{formatCurrency(stampDutyDetails.savingsAmount)}</span>
+                </div>
+              )}
+              {stampDutyDetails.eligibilityMessage && (
+                <div className="mt-4 p-3 bg-white/5 rounded border border-[#C9A84C]/20">
+                  <p className="text-sm text-gray-300">{stampDutyDetails.eligibilityMessage}</p>
+                </div>
+              )}
             </div>
           </div>
         )}

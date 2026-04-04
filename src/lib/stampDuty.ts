@@ -1,18 +1,30 @@
 export type AustralianState = 'NSW' | 'VIC' | 'QLD' | 'WA' | 'SA' | 'TAS' | 'ACT' | 'NT';
+export type PropertyType = 'Established Home' | 'New Build' | 'Vacant Land';
+export type BuyerType = 'First Home Buyer' | 'Owner Occupied' | 'Investor' | 'Foreign Buyer';
 
 interface StampDutyResult {
   amount: number;
   fhbExemptionApplied: boolean;
   state: AustralianState;
+  standardDuty?: number;
+  concessionAmount?: number;
+  savingsAmount?: number;
+  eligibilityMessage?: string;
 }
 
 export function calculateStampDuty(
   propertyPrice: number,
   state: AustralianState,
-  isFirstHomeBuyer: boolean = false
+  isFirstHomeBuyer: boolean = false,
+  propertyType?: PropertyType,
+  buyerType?: BuyerType
 ): StampDutyResult {
   let amount = 0;
   let fhbExemptionApplied = false;
+  let standardDuty = 0;
+  let concessionAmount = 0;
+  let savingsAmount = 0;
+  let eligibilityMessage = '';
 
   switch (state) {
     case 'NSW':
@@ -52,11 +64,41 @@ export function calculateStampDuty(
       break;
 
     case 'QLD':
-      if (isFirstHomeBuyer && propertyPrice <= 550000) {
-        amount = 0;
-        fhbExemptionApplied = true;
+      standardDuty = calculateQLDStampDuty(propertyPrice);
+      const isForeignBuyer = buyerType === 'Foreign Buyer';
+
+      if (isFirstHomeBuyer || buyerType === 'First Home Buyer') {
+        if (propertyType === 'New Build') {
+          amount = 0;
+          concessionAmount = standardDuty;
+          savingsAmount = standardDuty;
+          fhbExemptionApplied = true;
+          eligibilityMessage = 'Full exemption for first home buyers purchasing new builds (contract after 1 May 2025)';
+        } else if (propertyPrice <= 700000) {
+          amount = 0;
+          concessionAmount = standardDuty;
+          savingsAmount = standardDuty;
+          fhbExemptionApplied = true;
+          eligibilityMessage = 'Full exemption for first home buyers purchasing established homes under $700,000';
+        } else if (propertyPrice <= 800000) {
+          const maxConcession = calculateQLDStampDuty(700000);
+          concessionAmount = maxConcession * ((800000 - propertyPrice) / 100000);
+          amount = standardDuty - concessionAmount;
+          savingsAmount = concessionAmount;
+          fhbExemptionApplied = true;
+          eligibilityMessage = 'Partial concession for first home buyers purchasing established homes between $700,001-$800,000';
+        } else {
+          amount = standardDuty;
+          eligibilityMessage = 'Standard rates apply - property value exceeds first home buyer concession threshold';
+        }
       } else {
-        amount = calculateQLDStampDuty(propertyPrice);
+        amount = standardDuty;
+      }
+
+      if (isForeignBuyer) {
+        const afadSurcharge = propertyPrice * 0.08;
+        amount += afadSurcharge;
+        eligibilityMessage = (eligibilityMessage || 'Standard rates apply') + ' + 8% AFAD surcharge for foreign buyers';
       }
       break;
 
@@ -84,7 +126,11 @@ export function calculateStampDuty(
   return {
     amount: Math.round(amount),
     fhbExemptionApplied,
-    state
+    state,
+    standardDuty: Math.round(standardDuty),
+    concessionAmount: Math.round(concessionAmount),
+    savingsAmount: Math.round(savingsAmount),
+    eligibilityMessage
   };
 }
 
