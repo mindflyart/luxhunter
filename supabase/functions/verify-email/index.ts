@@ -94,61 +94,25 @@ Deno.serve(async (req: Request) => {
     }
 
     if (leadData.propertyPrice || leadData.deposit || leadData.borrowingCapacity) {
-      const resendApiKey = Deno.env.get("RESEND_API_KEY");
-      const appUrl = Deno.env.get("APP_URL") || "https://luxhunter.com";
-
-      if (resendApiKey) {
-        const calculatorResults = `
-          <div style="background: #1e3a5f; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #C9A84C;">
-            <h3 style="color: #C9A84C; margin-top: 0;">📊 Your Calculator Results</h3>
-            ${leadData.borrowingCapacity ? `<p style="color: #fff; margin: 10px 0;"><strong>Borrowing Capacity:</strong> $${Number(leadData.borrowingCapacity).toLocaleString()}</p>` : ''}
-            ${leadData.monthlyRepayment ? `<p style="color: #fff; margin: 10px 0;"><strong>Monthly Repayment:</strong> $${Number(leadData.monthlyRepayment).toLocaleString()}/month</p>` : ''}
-            ${leadData.stampDuty ? `<p style="color: #fff; margin: 10px 0;"><strong>Stamp Duty:</strong> $${Number(leadData.stampDuty).toLocaleString()}</p>` : ''}
-            ${leadData.propertyPrice ? `<p style="color: #fff; margin: 10px 0;"><strong>Property Price:</strong> $${Number(leadData.propertyPrice).toLocaleString()}</p>` : ''}
-            ${leadData.deposit ? `<p style="color: #fff; margin: 10px 0;"><strong>Deposit:</strong> $${Number(leadData.deposit).toLocaleString()}</p>` : ''}
-            ${leadData.loanTerm ? `<p style="color: #fff; margin: 10px 0;"><strong>Loan Term:</strong> ${leadData.loanTerm} years</p>` : ''}
-            ${leadData.state ? `<p style="color: #fff; margin: 10px 0;"><strong>State:</strong> ${leadData.state}</p>` : ''}
-            ${leadData.postcode ? `<p style="color: #fff; margin: 10px 0;"><strong>Postcode:</strong> ${leadData.postcode}</p>` : ''}
-          </div>
-        `;
-
-        const emailHtml = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0A1628; color: #ffffff; padding: 40px; border-radius: 12px;">
-            <div style="text-align: center; margin-bottom: 32px;">
-              <h1 style="color: #C9A84C; font-size: 28px; margin: 0;">LuxHunter</h1>
-              <p style="color: #888; font-size: 14px; margin-top: 8px;">Property & Mortgage Advisory</p>
-            </div>
-            <h2 style="color: #ffffff; font-size: 22px;">Thank you, ${leadData.name || "valued customer"}!</h2>
-            <p style="color: #ccc; line-height: 1.6;">Your email has been verified successfully. Here are your property calculator results:</p>
-            ${calculatorResults}
-            <p style="color: #ccc; line-height: 1.6;">Our team will review your information and reach out to you shortly with personalized recommendations.</p>
-            <div style="text-align: center; margin: 32px 0;">
-              <a href="${appUrl}/contact" style="background: #C9A84C; color: #0A1628; padding: 16px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-block;">
-                Book a Consultation
-              </a>
-            </div>
-            <hr style="border: none; border-top: 1px solid #1e3a5f; margin: 24px 0;">
-            <p style="color: #888; font-size: 12px; text-align: center;">LuxHunter Property Services | info@luxhunter.com.au</p>
-          </div>
-        `;
-
-        try {
-          await fetch("https://api.resend.com/emails", {
+      try {
+        await fetch(
+          `${supabaseUrl}/functions/v1/send-welcome-email`,
+          {
             method: "POST",
             headers: {
-              "Authorization": `Bearer ${resendApiKey}`,
+              "Authorization": `Bearer ${supabaseServiceKey}`,
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              from: "LuxHunter <noreply@mail.luxhunter.com>",
-              to: [tokenRecord.email],
-              subject: "Your LuxHunter Property Report & Calculator Results",
-              html: emailHtml,
+              email: tokenRecord.email,
+              name: leadData.name,
+              type: "report",
+              leadData,
             }),
-          });
-        } catch (error) {
-          console.error("Error sending results email:", error);
-        }
+          }
+        );
+      } catch (error) {
+        console.error("Error sending report email:", error);
       }
     }
 
