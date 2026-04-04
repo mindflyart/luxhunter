@@ -38,6 +38,7 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
   const [loanTerm, setLoanTerm] = useState('30');
   const [selectedState, setSelectedState] = useState('NSW');
   const [postcode, setPostcode] = useState('');
+  const [propertyPrice, setPropertyPrice] = useState('');
   const [propertyType, setPropertyType] = useState<PropertyType>('Established Home');
   const [buyerType, setBuyerType] = useState<BuyerType>('Owner Occupied');
   const [locationClassification, setLocationClassification] = useState<LocationClassification | null>(null);
@@ -90,18 +91,25 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
     }
 
     const borrowing = calculateBorrowingCapacity(income);
-    const propertyValue = borrowing + depositAmount;
     const monthly = calculateMonthlyRepayment(borrowing, term);
-    const isFirstHomeBuyer = buyerType === 'First Home Buyer';
-    const stampDutyResult = calculateStateStampDuty(
-      propertyValue,
-      selectedState as AustralianState,
-      isFirstHomeBuyer,
-      propertyType,
-      buyerType
-    );
-    const stamp = stampDutyResult.amount;
-    setStampDutyDetails(stampDutyResult);
+
+    let stampDutyResult;
+    let stamp = 0;
+    if (propertyPrice && parseFloat(propertyPrice) > 0) {
+      const purchasePrice = parseFloat(propertyPrice);
+      const isFirstHomeBuyer = buyerType === 'First Home Buyer';
+      stampDutyResult = calculateStateStampDuty(
+        purchasePrice,
+        selectedState as AustralianState,
+        isFirstHomeBuyer,
+        propertyType,
+        buyerType
+      );
+      stamp = stampDutyResult.amount;
+      setStampDutyDetails(stampDutyResult);
+    } else {
+      setStampDutyDetails(null);
+    }
 
     const calculatedResults: CalculatorResults = {
       borrowingCapacity: borrowing,
@@ -165,7 +173,7 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
 
         <div className="relative">
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
           <div>
             <label className="block text-[#C9A84C] font-semibold mb-2">
               {language === 'en' ? 'Annual Income' : '年收入'}
@@ -227,9 +235,43 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
               ))}
             </select>
           </div>
+          <div>
+            <label className="block text-[#C9A84C] font-semibold mb-2">
+              {language === 'en' ? 'Postcode' : '邮编'}
+            </label>
+            <input
+              type="text"
+              value={postcode}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                setPostcode(value);
+              }}
+              maxLength={4}
+              placeholder="2000"
+              className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white placeholder-gray-500 focus:outline-none focus:border-[#C9A84C] transition-colors"
+            />
+          </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 mb-6">
+          <div>
+            <label className="block text-[#C9A84C] font-semibold mb-2">
+              {language === 'en' ? 'Property Purchase Price' : '物业购买价格'}
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+              <input
+                type="number"
+                value={propertyPrice}
+                onChange={(e) => setPropertyPrice(e.target.value)}
+                placeholder="800000"
+                className="w-full pl-8 pr-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white placeholder-gray-500 focus:outline-none focus:border-[#C9A84C] transition-colors"
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              {language === 'en' ? 'Required for stamp duty calculation' : '计算印花税所需'}
+            </p>
+          </div>
           <div>
             <label className="block text-[#C9A84C] font-semibold mb-2">
               {language === 'en' ? 'Postcode' : '邮编'}
@@ -331,6 +373,14 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {showResults && !stampDutyDetails && (!propertyPrice || parseFloat(propertyPrice) <= 0) && (
+          <div className="mb-6 p-4 rounded-lg bg-yellow-900/20 border border-yellow-500/50">
+            <p className="text-yellow-300 text-center">
+              {language === 'en' ? 'Enter property purchase price to calculate stamp duty' : '输入物业购买价格以计算印花税'}
+            </p>
           </div>
         )}
 
