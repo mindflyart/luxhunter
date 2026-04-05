@@ -68,28 +68,34 @@ export function calculateStampDuty(
       const isForeignBuyer = buyerType === 'Foreign Buyer';
 
       if (isFirstHomeBuyer || buyerType === 'First Home Buyer') {
-        if (propertyType === 'New Build') {
+        if (propertyType === 'New Build' || propertyType === 'Vacant Land') {
           amount = 0;
           concessionAmount = standardDuty;
           savingsAmount = standardDuty;
           fhbExemptionApplied = true;
-          eligibilityMessage = 'Full exemption for first home buyers purchasing new builds (contract after 1 May 2025)';
-        } else if (propertyPrice <= 700000) {
-          amount = 0;
-          concessionAmount = standardDuty;
-          savingsAmount = standardDuty;
-          fhbExemptionApplied = true;
-          eligibilityMessage = 'Full exemption for first home buyers purchasing established homes under $700,000';
-        } else if (propertyPrice <= 800000) {
-          const maxConcession = calculateQLDStampDuty(700000);
-          concessionAmount = maxConcession * ((800000 - propertyPrice) / 100000);
-          amount = standardDuty - concessionAmount;
-          savingsAmount = concessionAmount;
-          fhbExemptionApplied = true;
-          eligibilityMessage = 'Partial concession for first home buyers purchasing established homes between $700,001-$800,000';
+          eligibilityMessage = propertyType === 'New Build'
+            ? 'Full exemption for first home buyers purchasing new builds (contract after 1 May 2025) - no price cap'
+            : 'Full exemption for first home buyers purchasing vacant land - no price cap';
+        } else if (propertyType === 'Established Home') {
+          if (propertyPrice <= 700000) {
+            amount = 0;
+            concessionAmount = standardDuty;
+            savingsAmount = standardDuty;
+            fhbExemptionApplied = true;
+            eligibilityMessage = 'Full exemption for first home buyers purchasing established homes under $700,000';
+          } else if (propertyPrice <= 800000) {
+            const concessionRate = (800000 - propertyPrice) / 100000;
+            concessionAmount = standardDuty * concessionRate;
+            amount = standardDuty - concessionAmount;
+            savingsAmount = concessionAmount;
+            fhbExemptionApplied = true;
+            eligibilityMessage = 'Partial concession for first home buyers purchasing established homes between $700,001-$800,000';
+          } else {
+            amount = standardDuty;
+            eligibilityMessage = 'Standard rates apply - property value exceeds first home buyer concession threshold';
+          }
         } else {
           amount = standardDuty;
-          eligibilityMessage = 'Standard rates apply - property value exceeds first home buyer concession threshold';
         }
       } else {
         amount = standardDuty;
