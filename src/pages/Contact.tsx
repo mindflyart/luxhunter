@@ -16,21 +16,14 @@ const Contact: React.FC = () => {
   const [submitMessage, setSubmitMessage] = useState('');
 
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://assets.calendly.com/assets/external/widget.js';
-    script.async = true;
-    script.onload = () => {
-      if (window.Calendly) {
-        window.Calendly.initInlineWidget({
-          url: 'https://calendly.com/newluxytc-pm/30min',
-          parentElement: document.querySelector('.calendly-inline-widget'),
-        });
-      }
-    };
-    document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
+    const existingScript = document.querySelector('script[src="https://assets.calendly.com/assets/external/widget.js"]');
+
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.src = 'https://assets.calendly.com/assets/external/widget.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
