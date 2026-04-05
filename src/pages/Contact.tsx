@@ -19,6 +19,14 @@ const Contact: React.FC = () => {
     const script = document.createElement('script');
     script.src = 'https://assets.calendly.com/assets/external/widget.js';
     script.async = true;
+    script.onload = () => {
+      if (window.Calendly) {
+        window.Calendly.initInlineWidget({
+          url: 'https://calendly.com/newluxytc-pm/30min',
+          parentElement: document.querySelector('.calendly-inline-widget'),
+        });
+      }
+    };
     document.body.appendChild(script);
     return () => {
       document.body.removeChild(script);
