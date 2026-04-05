@@ -98,6 +98,7 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
     let stamp = 0;
     if (propertyPrice && parseFloat(propertyPrice) > 0) {
       const purchasePrice = parseFloat(propertyPrice);
+      console.log('🏠 Property Price for Stamp Duty:', purchasePrice);
       const isFirstHomeBuyer = buyerType === 'First Home Buyer';
       stampDutyResult = calculateStateStampDuty(
         purchasePrice,
@@ -107,6 +108,7 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
         buyerType
       );
       stamp = stampDutyResult.amount;
+      console.log('💰 Calculated Stamp Duty:', stamp);
       setStampDutyDetails(stampDutyResult);
     } else {
       setStampDutyDetails(null);
@@ -162,6 +164,7 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
           ...results!,
           postcode,
           state: selectedState,
+          propertyPrice,
           locationClassification: locationClassification || undefined,
         }}
       />

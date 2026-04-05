@@ -15,6 +15,7 @@ interface CalculatorVerificationModalProps {
     loanTerm: string;
     postcode: string;
     state: string;
+    propertyPrice: string;
     locationClassification?: string;
   };
 }
@@ -41,14 +42,19 @@ const CalculatorVerificationModal: React.FC<CalculatorVerificationModalProps> = 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      const propertyPrice = parseFloat(calculatorResults.deposit) + calculatorResults.borrowingCapacity;
+      const propertyPurchasePrice = calculatorResults.propertyPrice && parseFloat(calculatorResults.propertyPrice) > 0
+        ? parseFloat(calculatorResults.propertyPrice)
+        : parseFloat(calculatorResults.deposit) + calculatorResults.borrowingCapacity;
+
+      console.log('📧 Email Data - Property Price:', propertyPurchasePrice);
+      console.log('📧 Email Data - Stamp Duty:', calculatorResults.stampDuty);
 
       const leadData = {
         name: fullName,
         email,
         state: calculatorResults.state,
         source: 'Calculator',
-        propertyPrice,
+        propertyPrice: propertyPurchasePrice,
         deposit: parseFloat(calculatorResults.deposit),
         loanTerm: parseInt(calculatorResults.loanTerm),
         postcode: calculatorResults.postcode,
