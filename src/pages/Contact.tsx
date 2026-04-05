@@ -17,13 +17,15 @@ const Contact: React.FC = () => {
 
   useEffect(() => {
     const script = document.createElement('script');
+    script.type = 'text/javascript';
     script.src = 'https://assets.calendly.com/assets/external/widget.js';
     script.async = true;
-    document.body.appendChild(script);
+    document.head.appendChild(script);
 
     return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
+      const existingScript = document.querySelector('script[src="https://assets.calendly.com/assets/external/widget.js"]');
+      if (existingScript) {
+        existingScript.remove();
       }
     };
   }, []);
@@ -75,8 +77,8 @@ const Contact: React.FC = () => {
             <div className="bg-white rounded-xl overflow-hidden mb-8">
               <div
                 className="calendly-inline-widget"
-                data-url="https://calendly.com/newluxytc-pm/30min"
-                style={{ minWidth: '320px', height: '630px' }}
+                data-url="https://calendly.com/newluxytc-pm/30min?hide_event_type_details=1"
+                style={{ minWidth: '320px', height: '700px' }}
               />
             </div>
 

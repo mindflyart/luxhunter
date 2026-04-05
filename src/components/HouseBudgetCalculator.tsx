@@ -94,6 +94,9 @@ const HouseBudgetCalculator: React.FC<HouseBudgetCalculatorProps> = ({ onGetFree
     const borrowing = calculateBorrowingCapacity(income);
     const monthly = calculateMonthlyRepayment(borrowing, term);
 
+    console.log('Property Price entered:', propertyPrice);
+    console.log('Borrowing Capacity:', borrowing);
+
     let stampDutyResult;
     let stamp = 0;
     if (propertyPrice && parseFloat(propertyPrice) > 0) {
