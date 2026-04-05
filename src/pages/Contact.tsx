@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Mail, Phone, MessageCircle, Send, Calendar } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, Phone, MessageCircle, Send } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 
@@ -14,6 +14,19 @@ const Contact: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://assets.calendly.com/assets/external/widget.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,24 +72,12 @@ const Contact: React.FC = () => {
         <div className="grid lg:grid-cols-2 gap-12">
           <div>
             <h2 className="text-2xl font-bold text-white mb-6">{t('contact.quickConnect')}</h2>
-
-            <div className="bg-white/5 border border-[#C9A84C]/30 rounded-xl p-8 mb-8 text-center">
-              <div className="flex justify-center mb-6">
-                <div className="p-4 bg-[#C9A84C]/10 rounded-full">
-                  <Calendar className="text-[#C9A84C]" size={48} />
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-4">Book Your Free Consultation</h3>
-              <p className="text-gray-300 mb-6">Schedule a time to discuss your property goals with our expert advisors.</p>
-              <a
-                href="https://calendly.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block px-8 py-4 bg-[#C9A84C] text-[#0A1628] font-bold rounded-lg hover:bg-[#d4b865] transition-colors text-lg"
-              >
-                📅 Book Free Consultation
-              </a>
-              <p className="text-sm text-gray-400 mt-4">Opens our booking calendar in a new tab</p>
+            <div className="bg-white rounded-xl overflow-hidden mb-8">
+              <div
+                className="calendly-inline-widget"
+                data-url="https://calendly.com/newluxytc-pm/30min"
+                style={{ minWidth: '320px', height: '630px' }}
+              />
             </div>
 
             <div className="space-y-4">
