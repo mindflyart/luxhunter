@@ -17,16 +17,11 @@ const Contact: React.FC = () => {
 
   useEffect(() => {
     const script = document.createElement('script');
-    script.type = 'text/javascript';
     script.src = 'https://assets.calendly.com/assets/external/widget.js';
     script.async = true;
-    document.head.appendChild(script);
-
+    document.body.appendChild(script);
     return () => {
-      const existingScript = document.querySelector('script[src="https://assets.calendly.com/assets/external/widget.js"]');
-      if (existingScript) {
-        existingScript.remove();
-      }
+      document.body.removeChild(script);
     };
   }, []);
 
@@ -73,12 +68,12 @@ const Contact: React.FC = () => {
 
         <div className="grid lg:grid-cols-2 gap-12">
           <div>
-            <h2 className="text-2xl font-bold text-white mb-6">{t('contact.quickConnect')}</h2>
-            <div className="bg-white rounded-xl overflow-hidden mb-8">
+            <div className="quick-connect-section mb-8">
+              <h3 className="text-2xl font-bold text-white mb-6">Book Free Consultation</h3>
               <div
                 className="calendly-inline-widget"
-                data-url="https://calendly.com/newluxytc-pm/30min?hide_event_type_details=1"
-                style={{ minWidth: '320px', height: '700px' }}
+                data-url="https://calendly.com/newluxytc-pm/30min"
+                style={{minWidth: '320px', height: '700px'}}
               />
             </div>
 
