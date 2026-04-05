@@ -71,11 +71,45 @@ const Contact: React.FC = () => {
           <div>
             <div className="quick-connect-section mb-8">
               <h3 className="text-2xl font-bold text-white mb-6">Book Free Consultation</h3>
-              <div
-                className="calendly-inline-widget"
-                data-url="https://calendly.com/newluxytc-pm/30min"
-                style={{minWidth: '320px', height: '700px'}}
-              />
+              <div style={{
+                background: '#1a2744',
+                borderRadius: '12px',
+                padding: '40px',
+                textAlign: 'center',
+                minHeight: '300px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '20px'
+              }}>
+                <h3 style={{color: 'white', fontSize: '24px'}}>
+                  📅 Book Your Free Consultation
+                </h3>
+                <p style={{color: '#9ca3af'}}>
+                  Choose a time that works for you
+                </p>
+                <a
+                  href="https://calendly.com/newluxytc-pm/30min"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    background: '#c9a84c',
+                    color: '#0a1628',
+                    padding: '16px 32px',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    textDecoration: 'none',
+                    display: 'inline-block'
+                  }}
+                >
+                  📅 Book Free Consultation
+                </a>
+                <p style={{color: '#9ca3af', fontSize: '14px'}}>
+                  Opens booking calendar in new tab
+                </p>
+              </div>
             </div>
 
             <div className="space-y-4">
