@@ -36,6 +36,17 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return new Response(JSON.stringify({ error: "Invalid email format" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const sanitizeHtml = (str: string): string =>
+      str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
+
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (!resendApiKey) {
       return new Response(JSON.stringify({ error: "RESEND_API_KEY not configured" }), {
@@ -73,7 +84,7 @@ Deno.serve(async (req: Request) => {
       }
 
       const verificationUrl = `${appUrl}/verify-email?token=${token}`;
-      const displayName = name || 'Valued Client';
+      const displayName = sanitizeHtml(name || 'Valued Client');
 
       const borrowingCapacity = leadData?.borrowingCapacity
         ? Number(leadData.borrowingCapacity).toLocaleString("en-AU", { style: "currency", currency: "AUD", minimumFractionDigits: 0 })
@@ -347,7 +358,7 @@ Deno.serve(async (req: Request) => {
                   <tr>
                     <td style="padding: 40px;">
                       <h2 style="color: #ffffff; font-size: 28px; margin: 0 0 16px 0; font-weight: 600; text-align: center;">Your Full Property Report</h2>
-                      <p style="color: #ccc; line-height: 1.8; font-size: 16px; margin: 0 0 24px 0;">Dear ${name || "Valued Client"},</p>
+                      <p style="color: #ccc; line-height: 1.8; font-size: 16px; margin: 0 0 24px 0;">Dear ${sanitizeHtml(name || "Valued Client")},</p>
                       <p style="color: #ccc; line-height: 1.8; font-size: 16px; margin: 0 0 24px 0;">Thank you for verifying your email! Here is your complete property analysis and calculator results.</p>
                       ${fullResults}
                       ${interestRatesSection}
@@ -414,7 +425,7 @@ Deno.serve(async (req: Request) => {
                   </tr>
                   <tr>
                     <td style="padding: 40px;">
-                      <h2 style="color: #ffffff; font-size: 28px; margin: 0 0 16px 0; font-weight: 600;">Welcome, ${name || "Subscriber"}!</h2>
+                      <h2 style="color: #ffffff; font-size: 28px; margin: 0 0 16px 0; font-weight: 600;">Welcome, ${sanitizeHtml(name || "Subscriber")}!</h2>
                       <p style="color: #ccc; line-height: 1.8; font-size: 16px; margin: 0 0 24px 0;">Thank you for subscribing to LuxHunter Property Services. We're excited to have you join our community of smart property investors and homebuyers.</p>
                       <div style="background: #1e3a5f; padding: 24px; border-radius: 8px; margin: 24px 0; border-left: 4px solid #C9A84C;">
                         <h3 style="color: #C9A84C; margin: 0 0 16px 0; font-size: 20px;">What You'll Receive:</h3>

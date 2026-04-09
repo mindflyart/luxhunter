@@ -3,7 +3,7 @@ import { Lock, Save, Plus, Trash2, CreditCard as Edit2, Eye, EyeOff } from 'luci
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || '0309';
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
 
 interface LVRLimit {
   id: string;
@@ -109,7 +109,7 @@ const Admin = () => {
       return;
     }
 
-    if (password === ADMIN_PASSWORD) {
+    if (ADMIN_PASSWORD && password === ADMIN_PASSWORD) {
       setAuthenticated(true);
       setLoginAttempts(0);
       setIsLocked(false);
