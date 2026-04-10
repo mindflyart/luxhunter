@@ -41,6 +41,10 @@ interface FeaturedProperty {
   location: string;
   state: string;
   price: string;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  property_type: string;
+  status: string;
   description: string;
   image_url: string;
   tag: string;
@@ -51,8 +55,12 @@ interface FeaturedProperty {
 
 interface InterestRate {
   id: string;
-  product_type: string;
-  rate: number;
+  lender_name: string;
+  rate_type: string;
+  interest_rate: number;
+  comparison_rate: number;
+  effective_date: string;
+  created_at: string;
   updated_at: string;
 }
 
@@ -182,8 +190,14 @@ const Admin = () => {
   // New forms
   const [newInsight, setNewInsight] = useState({ category: 'property', title: '', description: '', content: '' });
   const [newProperty, setNewProperty] = useState({
-    title: '', location: '', state: 'NSW', price: '', description: '',
-    image_url: '', tag: '', display_order: 0, is_active: true,
+    title: '', location: '', state: 'NSW', price: '', bedrooms: null as number | null,
+    bathrooms: null as number | null, property_type: 'House', status: 'For Sale',
+    description: '', image_url: '', tag: '', display_order: 0, is_active: true,
+  });
+  const [showAddRate, setShowAddRate] = useState(false);
+  const [newRate, setNewRate] = useState({
+    lender_name: '', rate_type: 'Variable', interest_rate: 0, comparison_rate: 0,
+    effective_date: new Date().toISOString().split('T')[0],
   });
 
   // ─── Data loading ──────────────────────────────────────────────────────────
@@ -335,6 +349,31 @@ const Admin = () => {
     }
   };
 
+  const addRate = async () => {
+    if (!newRate.lender_name) { showToast('error', 'Lender name is required'); return; }
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('interest_rates').insert({ ...newRate, updated_at: new Date().toISOString() });
+      if (error) throw error;
+      setNewRate({ lender_name: '', rate_type: 'Variable', interest_rate: 0, comparison_rate: 0, effective_date: new Date().toISOString().split('T')[0] });
+      setShowAddRate(false);
+      await loadData();
+      showToast('success', 'Rate added');
+    } catch {
+      showToast('error', 'Failed to add rate');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteRate = async (id: string) => {
+    if (!window.confirm('Delete this rate?')) return;
+    const { error } = await supabase.from('interest_rates').delete().eq('id', id);
+    if (error) { showToast('error', 'Failed to delete'); return; }
+    setInterestRates(prev => prev.filter(r => r.id !== id));
+    showToast('success', 'Rate deleted');
+  };
+
   // ─── Insights ─────────────────────────────────────────────────────────────
 
   const addInsight = async () => {
@@ -394,7 +433,7 @@ const Admin = () => {
     try {
       const { error } = await supabase.from('featured_properties').insert(newProperty);
       if (error) throw error;
-      setNewProperty({ title: '', location: '', state: 'NSW', price: '', description: '', image_url: '', tag: '', display_order: 0, is_active: true });
+      setNewProperty({ title: '', location: '', state: 'NSW', price: '', bedrooms: null, bathrooms: null, property_type: 'House', status: 'For Sale', description: '', image_url: '', tag: '', display_order: 0, is_active: true });
       await loadData();
       showToast('success', 'Property added');
     } catch {
@@ -820,6 +859,7 @@ const Admin = () => {
                     <option value="property">Property Market</option>
                     <option value="mortgage">Mortgage Trends</option>
                     <option value="investment">Investment</option>
+                    <option value="interest_rate">Interest Rate Update</option>
                   </select>
                 </Field>
                 <Field label="Title">
@@ -859,6 +899,7 @@ const Admin = () => {
                             <option value="property">Property Market</option>
                             <option value="mortgage">Mortgage Trends</option>
                             <option value="investment">Investment</option>
+                            <option value="interest_rate">Interest Rate Update</option>
                           </select>
                         </Field>
                         <Field label="Title">
@@ -938,6 +979,26 @@ const Admin = () => {
                   <input type="text" value={newProperty.price} onChange={e => setNewProperty({ ...newProperty, price: e.target.value })}
                     placeholder="$2.5M" className={inputCls} />
                 </Field>
+                <Field label="Bedrooms">
+                  <input type="number" min={0} max={20} value={newProperty.bedrooms ?? ''}
+                    onChange={e => setNewProperty({ ...newProperty, bedrooms: e.target.value ? parseInt(e.target.value) : null })}
+                    placeholder="0" className={inputCls} />
+                </Field>
+                <Field label="Bathrooms">
+                  <input type="number" min={0} max={20} value={newProperty.bathrooms ?? ''}
+                    onChange={e => setNewProperty({ ...newProperty, bathrooms: e.target.value ? parseInt(e.target.value) : null })}
+                    placeholder="0" className={inputCls} />
+                </Field>
+                <Field label="Property Type">
+                  <select value={newProperty.property_type} onChange={e => setNewProperty({ ...newProperty, property_type: e.target.value })} className={selectCls}>
+                    {['House', 'Apartment', 'Townhouse', 'Unit', 'Land', 'Other'].map(t => <option key={t}>{t}</option>)}
+                  </select>
+                </Field>
+                <Field label="Status">
+                  <select value={newProperty.status} onChange={e => setNewProperty({ ...newProperty, status: e.target.value })} className={selectCls}>
+                    {['For Sale', 'Sold', 'Under Contract', 'Leased'].map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </Field>
                 <Field label="Tag">
                   <input type="text" value={newProperty.tag} onChange={e => setNewProperty({ ...newProperty, tag: e.target.value })}
                     placeholder="Premium Location" className={inputCls} />
@@ -950,6 +1011,9 @@ const Admin = () => {
                   <Field label="Image URL *">
                     <input type="text" value={newProperty.image_url} onChange={e => setNewProperty({ ...newProperty, image_url: e.target.value })}
                       placeholder="https://images.pexels.com/..." className={inputCls} />
+                    {newProperty.image_url && (
+                      <img src={newProperty.image_url} alt="Preview" className="mt-2 w-48 h-32 object-cover rounded-lg bg-gray-800 border border-white/10" />
+                    )}
                   </Field>
                 </div>
                 <div className="md:col-span-2">
@@ -991,6 +1055,26 @@ const Admin = () => {
                           <input type="text" value={editingProperty.price}
                             onChange={e => setEditingProperty({ ...editingProperty, price: e.target.value })} className={inputCls} />
                         </Field>
+                        <Field label="Bedrooms">
+                          <input type="number" min={0} max={20} value={editingProperty.bedrooms ?? ''}
+                            onChange={e => setEditingProperty({ ...editingProperty, bedrooms: e.target.value ? parseInt(e.target.value) : null })}
+                            placeholder="0" className={inputCls} />
+                        </Field>
+                        <Field label="Bathrooms">
+                          <input type="number" min={0} max={20} value={editingProperty.bathrooms ?? ''}
+                            onChange={e => setEditingProperty({ ...editingProperty, bathrooms: e.target.value ? parseInt(e.target.value) : null })}
+                            placeholder="0" className={inputCls} />
+                        </Field>
+                        <Field label="Property Type">
+                          <select value={editingProperty.property_type} onChange={e => setEditingProperty({ ...editingProperty, property_type: e.target.value })} className={selectCls}>
+                            {['House', 'Apartment', 'Townhouse', 'Unit', 'Land', 'Other'].map(t => <option key={t}>{t}</option>)}
+                          </select>
+                        </Field>
+                        <Field label="Status">
+                          <select value={editingProperty.status} onChange={e => setEditingProperty({ ...editingProperty, status: e.target.value })} className={selectCls}>
+                            {['For Sale', 'Sold', 'Under Contract', 'Leased'].map(s => <option key={s}>{s}</option>)}
+                          </select>
+                        </Field>
                         <Field label="Tag">
                           <input type="text" value={editingProperty.tag}
                             onChange={e => setEditingProperty({ ...editingProperty, tag: e.target.value })} className={inputCls} />
@@ -1003,6 +1087,9 @@ const Admin = () => {
                           <Field label="Image URL">
                             <input type="text" value={editingProperty.image_url}
                               onChange={e => setEditingProperty({ ...editingProperty, image_url: e.target.value })} className={inputCls} />
+                            {editingProperty.image_url && (
+                              <img src={editingProperty.image_url} alt="Preview" className="mt-2 w-48 h-32 object-cover rounded-lg bg-gray-800 border border-white/10" />
+                            )}
                           </Field>
                         </div>
                         <div className="md:col-span-2">
@@ -1064,40 +1151,94 @@ const Admin = () => {
 
         {/* ── INTEREST RATES ── */}
         {activeTab === 'rates' && (
-          <div className="bg-[#0d1f35] border border-[#C9A84C]/15 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-white font-semibold text-lg">Interest Rates</h2>
-                <p className="text-gray-500 text-sm mt-0.5">Rates used in the borrowing capacity calculator</p>
+          <div className="space-y-6">
+            <div className="bg-[#0d1f35] border border-[#C9A84C]/15 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-white font-semibold text-lg">Interest Rates</h2>
+                  <p className="text-gray-500 text-sm mt-0.5">Lender rates displayed on the site</p>
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => setShowAddRate(v => !v)} className={btnGhost}>
+                    <Plus size={16} />Add Rate
+                  </button>
+                  <button onClick={saveRates} disabled={saving} className={btnGold}>
+                    <Save size={16} />{saving ? 'Saving...' : 'Save All Changes'}
+                  </button>
+                </div>
               </div>
-              <button onClick={saveRates} disabled={saving} className={btnGold}>
-                <Save size={16} />{saving ? 'Saving...' : 'Save All Changes'}
-              </button>
-            </div>
-            {interestRates.length === 0
-              ? <p className="text-gray-500 text-center py-16">No interest rate records found</p>
-              : <div className="space-y-3">
-                {interestRates.map(rate => (
-                  <div key={rate.id} className="flex items-center gap-6 p-4 bg-[#0a1628] border border-[#C9A84C]/10 rounded-xl">
-                    <div className="flex-1">
-                      <p className="text-[#C9A84C] text-xs font-semibold uppercase tracking-wide mb-1">Product Type</p>
-                      <input type="text" value={rate.product_type} disabled
-                        className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-gray-400 text-sm cursor-not-allowed" />
-                    </div>
-                    <div className="w-40">
-                      <p className="text-[#C9A84C] text-xs font-semibold uppercase tracking-wide mb-1">Rate (%)</p>
-                      <input type="number" step="0.01" value={rate.rate}
-                        onChange={e => setInterestRates(prev => prev.map(r => r.id === rate.id ? { ...r, rate: parseFloat(e.target.value) || 0 } : r))}
-                        className={inputCls} />
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-gray-500 text-xs">Last updated</p>
-                      <p className="text-gray-400 text-xs mt-0.5">{fmt(rate.updated_at)}</p>
-                    </div>
+
+              {showAddRate && (
+                <div className="mb-6 p-5 bg-[#0a1628] border border-[#C9A84C]/20 rounded-xl">
+                  <h3 className="text-white font-semibold mb-4 text-sm">New Rate</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Field label="Lender Name">
+                      <input type="text" value={newRate.lender_name}
+                        onChange={e => setNewRate({ ...newRate, lender_name: e.target.value })}
+                        placeholder="Commonwealth Bank" className={inputCls} />
+                    </Field>
+                    <Field label="Rate Type">
+                      <select value={newRate.rate_type} onChange={e => setNewRate({ ...newRate, rate_type: e.target.value })} className={selectCls}>
+                        {['Variable', 'Fixed 1yr', 'Fixed 2yr', 'Fixed 3yr', 'Fixed 5yr'].map(t => <option key={t}>{t}</option>)}
+                      </select>
+                    </Field>
+                    <Field label="Effective Date">
+                      <input type="date" value={newRate.effective_date}
+                        onChange={e => setNewRate({ ...newRate, effective_date: e.target.value })} className={inputCls} />
+                    </Field>
+                    <Field label="Interest Rate (%)">
+                      <input type="number" step="0.01" min="0" value={newRate.interest_rate}
+                        onChange={e => setNewRate({ ...newRate, interest_rate: parseFloat(e.target.value) || 0 })} className={inputCls} />
+                    </Field>
+                    <Field label="Comparison Rate (%)">
+                      <input type="number" step="0.01" min="0" value={newRate.comparison_rate}
+                        onChange={e => setNewRate({ ...newRate, comparison_rate: parseFloat(e.target.value) || 0 })} className={inputCls} />
+                    </Field>
                   </div>
-                ))}
-              </div>
-            }
+                  <div className="flex gap-3 mt-4">
+                    <button onClick={addRate} disabled={saving} className={btnGold}>
+                      <Plus size={16} />{saving ? 'Adding...' : 'Add Rate'}
+                    </button>
+                    <button onClick={() => setShowAddRate(false)} className={btnGhost}>Cancel</button>
+                  </div>
+                </div>
+              )}
+
+              {interestRates.length === 0
+                ? <p className="text-gray-500 text-center py-16">No interest rate records found. Click "+ Add Rate" to get started.</p>
+                : <div className="space-y-3">
+                  {interestRates.map(rate => (
+                    <div key={rate.id} className="flex items-center gap-4 p-4 bg-[#0a1628] border border-[#C9A84C]/10 rounded-xl">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
+                          <span className="text-white font-semibold">{rate.lender_name}</span>
+                          <span className="px-2 py-0.5 bg-[#C9A84C]/10 text-[#C9A84C] text-xs rounded font-medium">{rate.rate_type}</span>
+                          <span className="text-gray-500 text-xs">Effective: {rate.effective_date ? new Date(rate.effective_date).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</span>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div>
+                            <p className="text-[#C9A84C] text-xs font-semibold uppercase tracking-wide mb-1">Interest Rate (%)</p>
+                            <input type="number" step="0.01" value={rate.interest_rate}
+                              onChange={e => setInterestRates(prev => prev.map(r => r.id === rate.id ? { ...r, interest_rate: parseFloat(e.target.value) || 0 } : r))}
+                              className={inputCls} />
+                          </div>
+                          <div>
+                            <p className="text-[#C9A84C] text-xs font-semibold uppercase tracking-wide mb-1">Comparison Rate (%)</p>
+                            <input type="number" step="0.01" value={rate.comparison_rate}
+                              onChange={e => setInterestRates(prev => prev.map(r => r.id === rate.id ? { ...r, comparison_rate: parseFloat(e.target.value) || 0 } : r))}
+                              className={inputCls} />
+                          </div>
+                        </div>
+                      </div>
+                      <button onClick={() => deleteRate(rate.id)}
+                        className="p-2 bg-red-600/15 text-red-400 border border-red-600/25 rounded-lg hover:bg-red-600/25 transition-colors shrink-0">
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              }
+            </div>
           </div>
         )}
 
