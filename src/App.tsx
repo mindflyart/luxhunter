@@ -21,13 +21,14 @@ import Enquire from './pages/Enquire';
 import Admin from './pages/Admin';
 import LeadLanding from './pages/LeadLanding';
 import VerifyEmail from './pages/VerifyEmail';
+import Unsubscribe from './pages/Unsubscribe';
 
 const getInitialPage = () => {
   const path = window.location.pathname.slice(1);
   const validPages = [
     'home', 'services', 'calculator', 'about', 'contact',
     'privacy-policy', 'terms-of-service', 'article-sydney-prices',
-    'article-borrowing-capacity', 'enquire', 'admin', 'lead', 'verify-email'
+    'article-borrowing-capacity', 'enquire', 'admin', 'lead', 'verify-email', 'unsubscribe'
   ];
   return validPages.includes(path) ? path : 'home';
 };
@@ -100,6 +101,8 @@ function App() {
         return <LeadLanding />;
       case 'verify-email':
         return <VerifyEmail />;
+      case 'unsubscribe':
+        return <Unsubscribe />;
       default:
         return <Home onGetFreeReport={() => setShowFreeReportModal(true)} onNavigate={setCurrentPage} />;
     }
@@ -116,8 +119,8 @@ function App() {
         />
         <SavedResultsBanner onViewDetails={handleViewCalculatorDetails} />
         <main className="pt-20">{renderPage()}</main>
-        <Newsletter />
-        <Footer onNavigate={setCurrentPage} />
+        {currentPage !== 'unsubscribe' && <Newsletter />}
+        {currentPage !== 'unsubscribe' && <Footer onNavigate={setCurrentPage} />}
 
         <FloatingChatBot />
 
