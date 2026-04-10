@@ -108,6 +108,7 @@ const Newsletter: React.FC = () => {
         commercialLoanUpdates: false,
       });
     } catch (error) {
+      console.error('Newsletter submit error:', error);
       setMessage(t('error.generic'));
     } finally {
       setIsSubmitting(false);
