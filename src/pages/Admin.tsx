@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
+console.log('[Admin] VITE_ADMIN_PASSWORD first 3 chars:', ADMIN_PASSWORD ? ADMIN_PASSWORD.substring(0, 3) : 'UNDEFINED');
 
 interface LVRLimit {
   id: string;
