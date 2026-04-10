@@ -48,6 +48,7 @@ interface FeaturedProperty {
 const Admin = () => {
   const { language } = useLanguage();
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState<'insights' | 'lvr' | 'risk' | 'properties'>('insights');
   const [loginAttempts, setLoginAttempts] = useState(0);
@@ -315,14 +316,23 @@ const Admin = () => {
           <h1 className="text-2xl font-bold text-white mb-4 text-center">
             {language === 'en' ? 'Admin' : '管理员'}
           </h1>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={language === 'en' ? 'Password' : '密码'}
-            className="w-full p-3 rounded bg-[#0a1628] text-white border border-[#d4af37]/30 mb-4"
-            onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-          />
+          <div className="relative mb-4">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={language === 'en' ? 'Password' : '密码'}
+              className="w-full p-3 pr-12 rounded bg-[#0a1628] text-white border border-[#d4af37]/30"
+              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#d4af37]/60 hover:text-[#d4af37] transition-colors"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
           <button
             onClick={handleLogin}
             disabled={isLocked}
