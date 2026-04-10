@@ -93,6 +93,7 @@ interface NewsletterSubscriber {
   name: string;
   is_active: boolean;
   subscribed_at: string;
+  preferences: Record<string, boolean>;
 }
 
 interface CalculatorUnlock {
@@ -545,7 +546,7 @@ const Admin = () => {
   // ─── Dashboard ────────────────────────────────────────────────────────────
 
   const tabs: { id: TabId; label: string; icon: React.ReactNode; badge?: number }[] = [
-    { id: 'leads', label: 'Leads', icon: <Users size={15} />, badge: contacts.length + freeReports.length + calcUnlocks.length },
+    { id: 'leads', label: 'Leads', icon: <Users size={15} />, badge: contacts.length + freeReports.length + calcUnlocks.length + subscribers.length },
     { id: 'insights', label: 'Articles', icon: <FileText size={15} />, badge: insights.length },
     { id: 'properties', label: 'Properties', icon: <Home size={15} />, badge: featuredProperties.length },
     { id: 'rates', label: 'Interest Rates', icon: <TrendingUp size={15} /> },
@@ -821,24 +822,38 @@ const Admin = () => {
                     <table className="w-full text-sm">
                       <thead className="border-b border-[#C9A84C]/10">
                         <tr>
-                          {['Date', 'Name', 'Email', 'Status'].map(h => (
+                          {['Date', 'Name', 'Email', 'Preferences', 'Status'].map(h => (
                             <th key={h} className="px-4 py-3 text-left text-[#C9A84C] text-xs font-semibold uppercase tracking-wide">{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
-                        {subscribers.map(s => (
+                        {subscribers.map(s => {
+                          const prefs = s.preferences || {};
+                          const activePrefs = Object.entries(prefs).filter(([, v]) => v).map(([k]) =>
+                            k === 'property_news' ? 'Property' : k === 'personal_loan_updates' ? 'Personal Loan' : k === 'commercial_loan_updates' ? 'Commercial Loan' : k
+                          );
+                          return (
                           <tr key={s.id} className="hover:bg-white/2 transition-colors">
                             <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{fmt(s.subscribed_at)}</td>
                             <td className="px-4 py-3 text-white">{s.name || '—'}</td>
                             <td className="px-4 py-3 text-gray-300">{s.email}</td>
+                            <td className="px-4 py-3">
+                              {activePrefs.length > 0
+                                ? <div className="flex flex-wrap gap-1">{activePrefs.map(p => (
+                                    <span key={p} className="px-1.5 py-0.5 bg-[#C9A84C]/10 text-[#C9A84C] text-xs rounded">{p}</span>
+                                  ))}</div>
+                                : <span className="text-gray-600 text-xs">None</span>
+                              }
+                            </td>
                             <td className="px-4 py-3">
                               <span className={`px-2 py-0.5 rounded text-xs font-medium ${s.is_active ? 'bg-green-900/40 text-green-400' : 'bg-gray-800 text-gray-500'}`}>
                                 {s.is_active ? 'Active' : 'Unsubscribed'}
                               </span>
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

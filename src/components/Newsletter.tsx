@@ -50,7 +50,17 @@ const Newsletter: React.FC = () => {
           },
         ]);
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') {
+          setMessage(
+            language === 'en'
+              ? 'This email is already subscribed.'
+              : '该邮箱已订阅。'
+          );
+          return;
+        }
+        throw error;
+      }
 
       try {
         const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-welcome-email`;
@@ -68,6 +78,25 @@ const Newsletter: React.FC = () => {
         });
       } catch (emailError) {
         console.error('Error sending welcome email:', emailError);
+      }
+
+      try {
+        const airtableUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-to-airtable`;
+        await fetch(airtableUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            source: 'Newsletter Signup',
+            notes: `Preferences: ${Object.entries(preferences).filter(([, v]) => v).map(([k]) => k.replace(/_/g, ' ')).join(', ') || 'None selected'}`,
+          }),
+        });
+      } catch (airtableError) {
+        console.error('Error saving to Airtable:', airtableError);
       }
 
       setShowSuccessModal(true);
