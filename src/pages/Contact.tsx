@@ -44,6 +44,23 @@ const Contact: React.FC = () => {
 
       if (error) throw error;
 
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-to-airtable`;
+      await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          source: 'Contact Form',
+          notes: formData.message,
+          preferredContact: formData.preferredContact,
+        }),
+      });
+
       setSubmitMessage(t('success.contact'));
       setFormData({
         name: '',

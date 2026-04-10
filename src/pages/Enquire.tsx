@@ -87,6 +87,24 @@ const Enquire: React.FC = () => {
         throw new Error(data.error || 'Failed to send verification email');
       }
 
+      const airtableUrl = `${supabaseUrl}/functions/v1/save-to-airtable`;
+      await fetch(airtableUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          source: 'Enquiry Form',
+          interest: [formData.propertyType],
+          state: formData.state,
+          notes: formData.message,
+        }),
+      });
+
       setShowSuccess(true);
       setFormData({
         fullName: '',
