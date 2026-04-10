@@ -53,6 +53,7 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState<'insights' | 'lvr' | 'risk' | 'properties'>('insights');
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
+  const [forgotPasswordStatus, setForgotPasswordStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
 
   const [lvrLimits, setLvrLimits] = useState<LVRLimit[]>([]);
   const [riskPostcodes, setRiskPostcodes] = useState<RiskPostcode[]>([]);
@@ -136,6 +137,28 @@ const Admin = () => {
     setAuthenticated(false);
     setPassword('');
     setLoginAttempts(0);
+  };
+
+  const handleForgotPassword = async () => {
+    setForgotPasswordStatus('sending');
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-admin-password-reminder`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        setForgotPasswordStatus('sent');
+      } else {
+        setForgotPasswordStatus('error');
+      }
+    } catch {
+      setForgotPasswordStatus('error');
+    }
   };
 
   const saveLVRLimits = async () => {
@@ -340,6 +363,22 @@ const Admin = () => {
           >
             {isLocked ? (language === 'en' ? 'Locked' : '已锁定') : (language === 'en' ? 'Login' : '登录')}
           </button>
+          <div className="mt-4 text-center">
+            {forgotPasswordStatus === 'sent' ? (
+              <p className="text-sm text-green-400">Password reminder sent to info@luxhunter.com</p>
+            ) : forgotPasswordStatus === 'error' ? (
+              <p className="text-sm text-red-400">Failed to send reminder. Please try again.</p>
+            ) : (
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={forgotPasswordStatus === 'sending'}
+                className="text-sm text-[#d4af37]/60 hover:text-[#d4af37] transition-colors disabled:opacity-50"
+              >
+                {forgotPasswordStatus === 'sending' ? 'Sending...' : 'Forgot Password?'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
