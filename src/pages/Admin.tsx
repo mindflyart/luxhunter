@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Lock, Save, Plus, Trash2, CreditCard as Edit2, Eye, EyeOff } from 'lucide-react';
+import { Lock, Save, Plus, Trash2, CreditCard as Edit2, Eye, EyeOff, KeyRound, X } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
 console.log('[Admin] VITE_ADMIN_PASSWORD first 3 chars:', ADMIN_PASSWORD ? ADMIN_PASSWORD.substring(0, 3) : 'UNDEFINED');
+
+const getEffectivePassword = () => {
+  const override = localStorage.getItem('adminPasswordOverride');
+  return override || ADMIN_PASSWORD;
+};
 
 interface LVRLimit {
   id: string;
@@ -82,6 +87,16 @@ const Admin = () => {
   const [editingProperty, setEditingProperty] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [cpCurrent, setCpCurrent] = useState('');
+  const [cpNew, setCpNew] = useState('');
+  const [cpConfirm, setCpConfirm] = useState('');
+  const [cpShowCurrent, setCpShowCurrent] = useState(false);
+  const [cpShowNew, setCpShowNew] = useState(false);
+  const [cpShowConfirm, setCpShowConfirm] = useState(false);
+  const [cpError, setCpError] = useState('');
+  const [cpSuccess, setCpSuccess] = useState(false);
+
   useEffect(() => {
     if (authenticated) {
       loadData();
@@ -112,7 +127,7 @@ const Admin = () => {
       return;
     }
 
-    if (ADMIN_PASSWORD && password === ADMIN_PASSWORD) {
+    if (password === getEffectivePassword()) {
       setAuthenticated(true);
       setLoginAttempts(0);
       setIsLocked(false);
@@ -137,6 +152,32 @@ const Admin = () => {
     setAuthenticated(false);
     setPassword('');
     setLoginAttempts(0);
+    setShowChangePassword(false);
+  };
+
+  const handleChangePassword = () => {
+    setCpError('');
+    if (cpCurrent !== getEffectivePassword()) {
+      setCpError('Current password is incorrect.');
+      return;
+    }
+    if (cpNew.length < 8) {
+      setCpError('New password must be at least 8 characters.');
+      return;
+    }
+    if (cpNew !== cpConfirm) {
+      setCpError('New password and confirmation do not match.');
+      return;
+    }
+    localStorage.setItem('adminPasswordOverride', cpNew);
+    setCpSuccess(true);
+    setCpCurrent('');
+    setCpNew('');
+    setCpConfirm('');
+    setTimeout(() => {
+      setCpSuccess(false);
+      setShowChangePassword(false);
+    }, 2000);
   };
 
   const handleForgotPassword = async () => {
@@ -391,13 +432,142 @@ const Admin = () => {
           <h1 className="text-4xl font-bold text-white">
             {language === 'en' ? 'Admin Dashboard' : '管理仪表板'}
           </h1>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-          >
-            {language === 'en' ? 'Logout' : '登出'}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => { setShowChangePassword(true); setCpError(''); setCpSuccess(false); }}
+              className="flex items-center gap-2 px-4 py-2 bg-[#C9A84C]/20 text-[#C9A84C] border border-[#C9A84C]/40 rounded hover:bg-[#C9A84C]/30 transition-colors"
+            >
+              <KeyRound size={16} />
+              {language === 'en' ? 'Change Password' : '更改密码'}
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+            >
+              {language === 'en' ? 'Logout' : '登出'}
+            </button>
+          </div>
         </div>
+
+        {showChangePassword && (
+          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+            <div className="bg-[#0A1628] border border-[#C9A84C]/30 rounded-xl p-8 w-full max-w-md relative">
+              <button
+                onClick={() => setShowChangePassword(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-[#C9A84C]/10 rounded-lg">
+                  <KeyRound className="text-[#C9A84C]" size={22} />
+                </div>
+                <h2 className="text-xl font-bold text-white">
+                  {language === 'en' ? 'Change Password' : '更改密码'}
+                </h2>
+              </div>
+
+              {cpSuccess ? (
+                <div className="text-center py-6">
+                  <div className="w-14 h-14 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-7 h-7 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <p className="text-green-400 font-semibold text-lg">Password updated successfully!</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[#C9A84C] text-sm mb-2">
+                      {language === 'en' ? 'Current Password' : '当前密码'}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={cpShowCurrent ? 'text' : 'password'}
+                        value={cpCurrent}
+                        onChange={(e) => setCpCurrent(e.target.value)}
+                        className="w-full px-4 py-3 pr-12 bg-[#1e3a5f] border border-[#C9A84C]/30 rounded text-white placeholder-gray-500 focus:outline-none focus:border-[#C9A84C]/60"
+                        placeholder={language === 'en' ? 'Enter current password' : '输入当前密码'}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setCpShowCurrent(!cpShowCurrent)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C9A84C]/50 hover:text-[#C9A84C] transition-colors"
+                      >
+                        {cpShowCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[#C9A84C] text-sm mb-2">
+                      {language === 'en' ? 'New Password' : '新密码'}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={cpShowNew ? 'text' : 'password'}
+                        value={cpNew}
+                        onChange={(e) => setCpNew(e.target.value)}
+                        className="w-full px-4 py-3 pr-12 bg-[#1e3a5f] border border-[#C9A84C]/30 rounded text-white placeholder-gray-500 focus:outline-none focus:border-[#C9A84C]/60"
+                        placeholder={language === 'en' ? 'At least 8 characters' : '至少8个字符'}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setCpShowNew(!cpShowNew)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C9A84C]/50 hover:text-[#C9A84C] transition-colors"
+                      >
+                        {cpShowNew ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[#C9A84C] text-sm mb-2">
+                      {language === 'en' ? 'Confirm New Password' : '确认新密码'}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={cpShowConfirm ? 'text' : 'password'}
+                        value={cpConfirm}
+                        onChange={(e) => setCpConfirm(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleChangePassword()}
+                        className="w-full px-4 py-3 pr-12 bg-[#1e3a5f] border border-[#C9A84C]/30 rounded text-white placeholder-gray-500 focus:outline-none focus:border-[#C9A84C]/60"
+                        placeholder={language === 'en' ? 'Repeat new password' : '重复新密码'}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setCpShowConfirm(!cpShowConfirm)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C9A84C]/50 hover:text-[#C9A84C] transition-colors"
+                      >
+                        {cpShowConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {cpError && (
+                    <p className="text-red-400 text-sm">{cpError}</p>
+                  )}
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={handleChangePassword}
+                      className="flex-1 bg-[#C9A84C] text-[#0A1628] py-3 rounded font-semibold hover:bg-[#d4b865] transition-colors"
+                    >
+                      {language === 'en' ? 'Update Password' : '更新密码'}
+                    </button>
+                    <button
+                      onClick={() => setShowChangePassword(false)}
+                      className="px-6 py-3 bg-white/10 text-white rounded hover:bg-white/20 transition-colors"
+                    >
+                      {language === 'en' ? 'Cancel' : '取消'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-4 mb-6 flex-wrap">
           <button
