@@ -8,8 +8,8 @@ const Unsubscribe = () => {
   const [status, setStatus] = useState<Status>('loading');
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const email = params.get('email');
+    const raw = new URLSearchParams(window.location.search).get('email');
+    const email = raw ? decodeURIComponent(raw.replace(/\+/g, '%2B')) : null;
 
     if (!email) {
       setStatus('missing');
