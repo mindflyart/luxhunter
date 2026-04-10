@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import NewsletterSuccessModal from './NewsletterSuccessModal';
 
 const Newsletter: React.FC = () => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -20,99 +20,53 @@ const Newsletter: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation: Check if name or email is empty
     if (!formData.name.trim() || !formData.email.trim()) {
-      setMessage(
-        language === 'en'
-          ? 'Please fill in both Name and Email fields.'
-          : '请填写姓名和邮箱字段。'
-      );
+      setMessage('Please fill in both Name and Email fields.');
       return;
     }
 
     setIsSubmitting(true);
     setMessage('');
 
-    try {
-      const preferences = {
-        property_news: formData.propertyNews,
-        personal_loan_updates: formData.personalLoanUpdates,
-        commercial_loan_updates: formData.commercialLoanUpdates,
-      };
-
-      const { error } = await supabase
-        .from('newsletter_subscribers')
-        .insert([
-          {
-            name: formData.name,
-            email: formData.email,
-            preferences: preferences,
-          },
-        ]);
-
-      if (error) {
-        if (error.code === '23505') {
-          setMessage(
-            language === 'en'
-              ? 'This email is already subscribed.'
-              : '该邮箱已订阅。'
-          );
-          return;
-        }
-        throw error;
-      }
-
-      try {
-        const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-welcome-email`;
-        await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: formData.email,
-            name: formData.name,
-            type: 'newsletter',
-          }),
-        });
-      } catch (emailError) {
-        console.error('Error sending welcome email:', emailError);
-      }
-
-      try {
-        const airtableUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-to-airtable`;
-        await fetch(airtableUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            source: 'Newsletter Signup',
-            notes: `Preferences: ${Object.entries(preferences).filter(([, v]) => v).map(([k]) => k.replace(/_/g, ' ')).join(', ') || 'None selected'}`,
-          }),
-        });
-      } catch (airtableError) {
-        console.error('Error saving to Airtable:', airtableError);
-      }
-
-      setShowSuccessModal(true);
-      setFormData({
-        name: '',
-        email: '',
-        propertyNews: false,
-        personalLoanUpdates: false,
-        commercialLoanUpdates: false,
+    const { error } = await supabase
+      .from('newsletter_subscribers')
+      .insert({
+        email: formData.email,
+        name: formData.name || '',
+        preferences: {},
+        is_active: true,
       });
-    } catch (error) {
-      console.error('Newsletter submit error:', error);
-      setMessage(t('error.generic'));
-    } finally {
+
+    if (error) {
+      if (error.code === '23505') {
+        setMessage("You're already subscribed!");
+      } else {
+        console.error('Newsletter insert error:', error);
+        setMessage('Something went wrong. Please try again.');
+      }
       setIsSubmitting(false);
+      return;
     }
+
+    setMessage('Successfully subscribed!');
+    setShowSuccessModal(true);
+    setFormData({
+      name: '',
+      email: '',
+      propertyNews: false,
+      personalLoanUpdates: false,
+      commercialLoanUpdates: false,
+    });
+    setIsSubmitting(false);
+
+    fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-welcome-email`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email: formData.email, name: formData.name, type: 'newsletter' }),
+    }).catch((err) => console.error('Welcome email error:', err));
   };
 
   return (
