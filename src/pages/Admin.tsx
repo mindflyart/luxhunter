@@ -1,15 +1,13 @@
-import { useState, useEffect } from 'react';
-import { Lock, Save, Plus, Trash2, CreditCard as Edit2, Eye, EyeOff, KeyRound, X } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Lock, Save, Plus, Trash2, CreditCard as Edit2, Eye, EyeOff, KeyRound, X, CheckCircle, AlertCircle, Users, FileText, Mail, BarChart2, Home, TrendingUp, Settings, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
-console.log('[Admin] VITE_ADMIN_PASSWORD first 3 chars:', ADMIN_PASSWORD ? ADMIN_PASSWORD.substring(0, 3) : 'UNDEFINED');
 
-const getEffectivePassword = () => {
-  const override = localStorage.getItem('adminPasswordOverride');
-  return override || ADMIN_PASSWORD;
-};
+const getEffectivePassword = () => localStorage.getItem('adminPasswordOverride') || ADMIN_PASSWORD;
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface LVRLimit {
   id: string;
@@ -25,6 +23,7 @@ interface RiskPostcode {
   postcode: number;
   risk_level: string;
   notes: string;
+  isNew?: boolean;
 }
 
 interface Insight {
@@ -50,44 +49,105 @@ interface FeaturedProperty {
   created_at: string;
 }
 
+interface InterestRate {
+  id: string;
+  product_type: string;
+  rate: number;
+  updated_at: string;
+}
+
+interface ContactSubmission {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  preferred_contact: string;
+  created_at: string;
+}
+
+interface FreeReportRequest {
+  id: string;
+  email: string;
+  full_name: string;
+  phone: string;
+  state: string;
+  interest_type: string;
+  annual_income: number;
+  deposit_amount: number;
+  calculated_borrowing_capacity: number;
+  created_at: string;
+}
+
+interface NewsletterSubscriber {
+  id: string;
+  email: string;
+  name: string;
+  is_active: boolean;
+  subscribed_at: string;
+}
+
+interface CalculatorUnlock {
+  id: string;
+  full_name: string;
+  email: string;
+  state: string;
+  created_at: string;
+}
+
+type TabId = 'leads' | 'insights' | 'properties' | 'rates' | 'lvr' | 'risk';
+type LeadsTabId = 'contacts' | 'reports' | 'calculator' | 'subscribers';
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+
+interface Toast {
+  id: string;
+  type: 'success' | 'error';
+  message: string;
+}
+
+const useToast = () => {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const show = useCallback((type: 'success' | 'error', message: string) => {
+    const id = crypto.randomUUID();
+    setToasts(prev => [...prev, { id, type, message }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  }, []);
+  const dismiss = (id: string) => setToasts(prev => prev.filter(t => t.id !== id));
+  return { toasts, show, dismiss };
+};
+
+// ─── Shared UI ────────────────────────────────────────────────────────────────
+
+const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div>
+    <label className="block text-[#C9A84C] text-xs font-semibold uppercase tracking-wide mb-1.5">{label}</label>
+    {children}
+  </div>
+);
+
+const inputCls = "w-full px-3 py-2.5 bg-[#0a1628] border border-[#C9A84C]/25 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#C9A84C]/60 transition-colors text-sm";
+const selectCls = `${inputCls} [&>option]:text-gray-900 [&>option]:bg-white`;
+const textareaCls = `${inputCls} resize-none`;
+const btnGold = "flex items-center gap-2 px-4 py-2.5 bg-[#C9A84C] text-[#0A1628] font-semibold rounded-lg hover:bg-[#d4b865] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed";
+const btnGhost = "flex items-center gap-2 px-4 py-2.5 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors text-sm";
+
+// ─── Admin Component ──────────────────────────────────────────────────────────
+
 const Admin = () => {
   const { language } = useLanguage();
+  const { toasts, show: showToast, dismiss } = useToast();
+
+  // Auth
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
-  const [activeTab, setActiveTab] = useState<'insights' | 'lvr' | 'risk' | 'properties'>('insights');
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
-  const [forgotPasswordStatus, setForgotPasswordStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [forgotStatus, setForgotStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
 
-  const [lvrLimits, setLvrLimits] = useState<LVRLimit[]>([]);
-  const [riskPostcodes, setRiskPostcodes] = useState<RiskPostcode[]>([]);
-  const [insights, setInsights] = useState<Insight[]>([]);
-  const [featuredProperties, setFeaturedProperties] = useState<FeaturedProperty[]>([]);
-
-  const [newInsight, setNewInsight] = useState({
-    category: 'property',
-    title: '',
-    description: '',
-    content: ''
-  });
-
-  const [newProperty, setNewProperty] = useState({
-    title: '',
-    location: '',
-    state: 'NSW',
-    price: '',
-    description: '',
-    image_url: '',
-    tag: '',
-    display_order: 0,
-    is_active: true
-  });
-
-  const [editingProperty, setEditingProperty] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const [showChangePassword, setShowChangePassword] = useState(false);
+  // Change password
+  const [showChangePwd, setShowChangePwd] = useState(false);
   const [cpCurrent, setCpCurrent] = useState('');
   const [cpNew, setCpNew] = useState('');
   const [cpConfirm, setCpConfirm] = useState('');
@@ -97,53 +157,85 @@ const Admin = () => {
   const [cpError, setCpError] = useState('');
   const [cpSuccess, setCpSuccess] = useState(false);
 
-  useEffect(() => {
-    if (authenticated) {
-      loadData();
-      const timeout = setTimeout(() => {
-        handleLogout();
-        alert(language === 'en' ? 'Session expired due to inactivity' : '由于不活动，会话已过期');
-      }, 30 * 60 * 1000);
+  // Navigation
+  const [activeTab, setActiveTab] = useState<TabId>('leads');
+  const [leadsTab, setLeadsTab] = useState<LeadsTabId>('contacts');
 
-      return () => clearTimeout(timeout);
-    }
-  }, [authenticated, language]);
+  // Data
+  const [lvrLimits, setLvrLimits] = useState<LVRLimit[]>([]);
+  const [riskPostcodes, setRiskPostcodes] = useState<RiskPostcode[]>([]);
+  const [insights, setInsights] = useState<Insight[]>([]);
+  const [featuredProperties, setFeaturedProperties] = useState<FeaturedProperty[]>([]);
+  const [interestRates, setInterestRates] = useState<InterestRate[]>([]);
+  const [contacts, setContacts] = useState<ContactSubmission[]>([]);
+  const [freeReports, setFreeReports] = useState<FreeReportRequest[]>([]);
+  const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
+  const [calcUnlocks, setCalcUnlocks] = useState<CalculatorUnlock[]>([]);
+
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Inline edit state
+  const [editingInsight, setEditingInsight] = useState<Insight | null>(null);
+  const [editingProperty, setEditingProperty] = useState<FeaturedProperty | null>(null);
+
+  // New forms
+  const [newInsight, setNewInsight] = useState({ category: 'property', title: '', description: '', content: '' });
+  const [newProperty, setNewProperty] = useState({
+    title: '', location: '', state: 'NSW', price: '', description: '',
+    image_url: '', tag: '', display_order: 0, is_active: true,
+  });
+
+  // ─── Data loading ──────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!authenticated) return;
+    loadData();
+    const timer = setTimeout(() => {
+      handleLogout();
+      showToast('error', 'Session expired due to inactivity');
+    }, 30 * 60 * 1000);
+    return () => clearTimeout(timer);
+  }, [authenticated]);
 
   const loadData = async () => {
-    const { data: lvr } = await supabase.from('lvr_limits').select('*');
-    const { data: risk } = await supabase.from('risk_postcodes').select('*');
-    const { data: insightsData } = await supabase.from('latest_insights').select('*').order('published_at', { ascending: false });
-    const { data: propertiesData } = await supabase.from('featured_properties').select('*').order('display_order', { ascending: true });
-
-    if (lvr) setLvrLimits(lvr);
-    if (risk) setRiskPostcodes(risk);
-    if (insightsData) setInsights(insightsData);
-    if (propertiesData) setFeaturedProperties(propertiesData);
+    setLoading(true);
+    const [lvr, risk, ins, props, rates, cont, reps, subs, calc] = await Promise.all([
+      supabase.from('lvr_limits').select('*').order('classification'),
+      supabase.from('risk_postcodes').select('*').order('postcode'),
+      supabase.from('latest_insights').select('*').order('published_at', { ascending: false }),
+      supabase.from('featured_properties').select('*').order('display_order'),
+      supabase.from('interest_rates').select('*').order('product_type'),
+      supabase.from('contact_submissions').select('*').order('created_at', { ascending: false }),
+      supabase.from('free_report_requests').select('*').order('created_at', { ascending: false }),
+      supabase.from('newsletter_subscribers').select('*').order('subscribed_at', { ascending: false }),
+      supabase.from('calculator_unlocks').select('*').order('created_at', { ascending: false }),
+    ]);
+    if (lvr.data) setLvrLimits(lvr.data);
+    if (risk.data) setRiskPostcodes(risk.data);
+    if (ins.data) setInsights(ins.data);
+    if (props.data) setFeaturedProperties(props.data);
+    if (rates.data) setInterestRates(rates.data);
+    if (cont.data) setContacts(cont.data);
+    if (reps.data) setFreeReports(reps.data);
+    if (subs.data) setSubscribers(subs.data);
+    if (calc.data) setCalcUnlocks(calc.data);
+    setLoading(false);
   };
 
-  const handleLogin = () => {
-    if (isLocked) {
-      alert(language === 'en' ? 'Too many failed attempts. Please try again in 15 minutes.' : '尝试次数过多。请在15分钟后重试。');
-      return;
-    }
+  // ─── Auth handlers ─────────────────────────────────────────────────────────
 
+  const handleLogin = () => {
+    if (isLocked) return;
     if (password === getEffectivePassword()) {
       setAuthenticated(true);
       setLoginAttempts(0);
-      setIsLocked(false);
     } else {
-      const newAttempts = loginAttempts + 1;
-      setLoginAttempts(newAttempts);
-
-      if (newAttempts >= 5) {
+      const attempts = loginAttempts + 1;
+      setLoginAttempts(attempts);
+      if (attempts >= 5) {
         setIsLocked(true);
-        setTimeout(() => {
-          setIsLocked(false);
-          setLoginAttempts(0);
-        }, 15 * 60 * 1000);
-        alert(language === 'en' ? 'Too many failed attempts. Locked for 15 minutes.' : '尝试次数过多。已锁定15分钟。');
-      } else {
-        alert(language === 'en' ? `Wrong password (${5 - newAttempts} attempts remaining)` : `密码错误 (剩余 ${5 - newAttempts} 次尝试)`);
+        setTimeout(() => { setIsLocked(false); setLoginAttempts(0); }, 15 * 60 * 1000);
       }
     }
   };
@@ -152,271 +244,257 @@ const Admin = () => {
     setAuthenticated(false);
     setPassword('');
     setLoginAttempts(0);
-    setShowChangePassword(false);
+    setShowChangePwd(false);
+  };
+
+  const handleForgotPassword = async () => {
+    setForgotStatus('sending');
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-admin-password-reminder`,
+        { method: 'POST', headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' } }
+      );
+      setForgotStatus(res.ok ? 'sent' : 'error');
+    } catch {
+      setForgotStatus('error');
+    }
   };
 
   const handleChangePassword = () => {
     setCpError('');
-    if (cpCurrent !== getEffectivePassword()) {
-      setCpError('Current password is incorrect.');
-      return;
-    }
-    if (cpNew.length < 8) {
-      setCpError('New password must be at least 8 characters.');
-      return;
-    }
-    if (cpNew !== cpConfirm) {
-      setCpError('New password and confirmation do not match.');
-      return;
-    }
+    if (cpCurrent !== getEffectivePassword()) { setCpError('Current password is incorrect.'); return; }
+    if (cpNew.length < 8) { setCpError('New password must be at least 8 characters.'); return; }
+    if (cpNew !== cpConfirm) { setCpError('Passwords do not match.'); return; }
     localStorage.setItem('adminPasswordOverride', cpNew);
     setCpSuccess(true);
-    setCpCurrent('');
-    setCpNew('');
-    setCpConfirm('');
-    setTimeout(() => {
-      setCpSuccess(false);
-      setShowChangePassword(false);
-    }, 2000);
+    setCpCurrent(''); setCpNew(''); setCpConfirm('');
+    setTimeout(() => { setCpSuccess(false); setShowChangePwd(false); }, 2000);
   };
 
-  const handleForgotPassword = async () => {
-    setForgotPasswordStatus('sending');
+  // ─── LVR ──────────────────────────────────────────────────────────────────
+
+  const saveLVR = async () => {
+    setSaving(true);
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      const response = await fetch(`${supabaseUrl}/functions/v1/send-admin-password-reminder`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      if (response.ok) {
-        setForgotPasswordStatus('sent');
-      } else {
-        setForgotPasswordStatus('error');
-      }
+      await Promise.all(lvrLimits.map(l =>
+        supabase.from('lvr_limits').upsert({ ...l, updated_at: new Date().toISOString() })
+      ));
+      showToast('success', 'LVR limits saved');
     } catch {
-      setForgotPasswordStatus('error');
-    }
-  };
-
-  const saveLVRLimits = async () => {
-    setIsSaving(true);
-    try {
-      for (const limit of lvrLimits) {
-        await supabase
-          .from('lvr_limits')
-          .upsert({
-            id: limit.id,
-            classification: limit.classification,
-            lvr_0_70: limit.lvr_0_70,
-            lvr_70_80: limit.lvr_70_80,
-            lvr_80_90: limit.lvr_80_90,
-            lvr_90_95: limit.lvr_90_95,
-            updated_at: new Date().toISOString(),
-          });
-      }
-      alert(language === 'en' ? 'LVR limits saved!' : 'LVR限制已保存！');
-    } catch (error) {
-      console.error('Error saving:', error);
-      alert(language === 'en' ? 'Failed to save' : '保存失败');
+      showToast('error', 'Failed to save LVR limits');
     } finally {
-      setIsSaving(false);
+      setSaving(false);
     }
   };
 
-  const saveRiskPostcodes = async () => {
-    setIsSaving(true);
+  // ─── Risk Postcodes ────────────────────────────────────────────────────────
+
+  const saveRisk = async () => {
+    setSaving(true);
     try {
-      for (const risk of riskPostcodes) {
-        await supabase
-          .from('risk_postcodes')
-          .upsert({
-            id: risk.id,
-            postcode: risk.postcode,
-            risk_level: risk.risk_level,
-            notes: risk.notes,
-            updated_at: new Date().toISOString(),
-          });
-      }
-      alert(language === 'en' ? 'Risk postcodes saved!' : '风险邮编已保存！');
-    } catch (error) {
-      console.error('Error saving:', error);
-      alert(language === 'en' ? 'Failed to save' : '保存失败');
+      const newOnes = riskPostcodes.filter(r => r.isNew);
+      const existing = riskPostcodes.filter(r => !r.isNew);
+      await Promise.all([
+        ...newOnes.map(({ isNew, ...data }) =>
+          supabase.from('risk_postcodes').insert({ ...data, updated_at: new Date().toISOString() })
+        ),
+        ...existing.map(r =>
+          supabase.from('risk_postcodes').upsert({ ...r, updated_at: new Date().toISOString() })
+        ),
+      ]);
+      showToast('success', 'Risk postcodes saved');
+      await loadData();
+    } catch {
+      showToast('error', 'Failed to save risk postcodes');
     } finally {
-      setIsSaving(false);
+      setSaving(false);
     }
   };
 
-  const addRiskPostcode = () => {
-    setRiskPostcodes([
-      ...riskPostcodes,
-      {
-        id: crypto.randomUUID(),
-        postcode: 0,
-        risk_level: 'High-Risk',
-        notes: '',
-      },
-    ]);
+  const deleteRisk = async (id: string, isNew?: boolean) => {
+    if (isNew) { setRiskPostcodes(prev => prev.filter(r => r.id !== id)); return; }
+    const { error } = await supabase.from('risk_postcodes').delete().eq('id', id);
+    if (error) { showToast('error', 'Failed to delete'); return; }
+    setRiskPostcodes(prev => prev.filter(r => r.id !== id));
+    showToast('success', 'Deleted');
   };
 
-  const deleteRiskPostcode = async (id: string) => {
+  // ─── Interest Rates ────────────────────────────────────────────────────────
+
+  const saveRates = async () => {
+    setSaving(true);
     try {
-      await supabase.from('risk_postcodes').delete().eq('id', id);
-      setRiskPostcodes(riskPostcodes.filter((r) => r.id !== id));
-    } catch (error) {
-      console.error('Error deleting:', error);
+      await Promise.all(interestRates.map(r =>
+        supabase.from('interest_rates').upsert({ ...r, updated_at: new Date().toISOString() })
+      ));
+      showToast('success', 'Interest rates saved');
+    } catch {
+      showToast('error', 'Failed to save interest rates');
+    } finally {
+      setSaving(false);
     }
   };
+
+  // ─── Insights ─────────────────────────────────────────────────────────────
 
   const addInsight = async () => {
     if (!newInsight.title || !newInsight.description || !newInsight.content) {
-      alert(language === 'en' ? 'Please fill in all fields' : '请填写所有字段');
-      return;
+      showToast('error', 'Please fill in all fields'); return;
     }
-
-    setIsSaving(true);
+    setSaving(true);
     try {
-      const { error } = await supabase.from('latest_insights').insert({
-        ...newInsight,
-        published_at: new Date().toISOString()
-      });
-
+      const { error } = await supabase.from('latest_insights').insert({ ...newInsight, published_at: new Date().toISOString() });
       if (error) throw error;
-
-      await loadData();
       setNewInsight({ category: 'property', title: '', description: '', content: '' });
-      alert(language === 'en' ? 'Insight added successfully!' : '文章添加成功！');
-    } catch (error) {
-      console.error('Error adding insight:', error);
-      alert(language === 'en' ? 'Failed to add insight' : '添加文章失败');
+      await loadData();
+      showToast('success', 'Article published');
+    } catch {
+      showToast('error', 'Failed to publish article');
     } finally {
-      setIsSaving(false);
+      setSaving(false);
+    }
+  };
+
+  const saveInsight = async () => {
+    if (!editingInsight) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('latest_insights').update({
+        category: editingInsight.category,
+        title: editingInsight.title,
+        description: editingInsight.description,
+        content: editingInsight.content,
+      }).eq('id', editingInsight.id);
+      if (error) throw error;
+      setEditingInsight(null);
+      await loadData();
+      showToast('success', 'Article updated');
+    } catch {
+      showToast('error', 'Failed to update article');
+    } finally {
+      setSaving(false);
     }
   };
 
   const deleteInsight = async (id: string) => {
-    if (!confirm(language === 'en' ? 'Delete this insight?' : '删除此文章？')) return;
-
-    try {
-      await supabase.from('latest_insights').delete().eq('id', id);
-      setInsights(insights.filter((i) => i.id !== id));
-      alert(language === 'en' ? 'Insight deleted' : '文章已删除');
-    } catch (error) {
-      console.error('Error deleting:', error);
-      alert(language === 'en' ? 'Failed to delete' : '删除失败');
-    }
+    if (!window.confirm('Delete this article?')) return;
+    const { error } = await supabase.from('latest_insights').delete().eq('id', id);
+    if (error) { showToast('error', 'Failed to delete'); return; }
+    setInsights(prev => prev.filter(i => i.id !== id));
+    showToast('success', 'Article deleted');
   };
+
+  // ─── Properties ───────────────────────────────────────────────────────────
 
   const addProperty = async () => {
     if (!newProperty.title || !newProperty.location || !newProperty.price || !newProperty.description || !newProperty.image_url) {
-      alert(language === 'en' ? 'Please fill in all required fields' : '请填写所有必填字段');
-      return;
+      showToast('error', 'Please fill in all required fields'); return;
     }
-
-    setIsSaving(true);
+    setSaving(true);
     try {
       const { error } = await supabase.from('featured_properties').insert(newProperty);
-
       if (error) throw error;
-
-      await loadData();
       setNewProperty({ title: '', location: '', state: 'NSW', price: '', description: '', image_url: '', tag: '', display_order: 0, is_active: true });
-      alert(language === 'en' ? 'Property added successfully!' : '房产添加成功！');
-    } catch (error) {
-      console.error('Error adding property:', error);
-      alert(language === 'en' ? 'Failed to add property' : '添加房产失败');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const updateProperty = async (id: string, updates: Partial<FeaturedProperty>) => {
-    setIsSaving(true);
-    try {
-      const { error } = await supabase.from('featured_properties').update(updates).eq('id', id);
-
-      if (error) throw error;
-
       await loadData();
-      setEditingProperty(null);
-      alert(language === 'en' ? 'Property updated!' : '房产已更新！');
-    } catch (error) {
-      console.error('Error updating property:', error);
-      alert(language === 'en' ? 'Failed to update property' : '更新房产失败');
+      showToast('success', 'Property added');
+    } catch {
+      showToast('error', 'Failed to add property');
     } finally {
-      setIsSaving(false);
+      setSaving(false);
     }
   };
 
-  const togglePropertyActive = async (id: string, currentStatus: boolean) => {
-    await updateProperty(id, { is_active: !currentStatus });
+  const saveProperty = async () => {
+    if (!editingProperty) return;
+    setSaving(true);
+    try {
+      const { id, created_at, ...updates } = editingProperty;
+      const { error } = await supabase.from('featured_properties').update(updates).eq('id', id);
+      if (error) throw error;
+      setEditingProperty(null);
+      await loadData();
+      showToast('success', 'Property updated');
+    } catch {
+      showToast('error', 'Failed to update property');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const togglePropertyActive = async (id: string, current: boolean) => {
+    const { error } = await supabase.from('featured_properties').update({ is_active: !current }).eq('id', id);
+    if (error) { showToast('error', 'Failed to update'); return; }
+    setFeaturedProperties(prev => prev.map(p => p.id === id ? { ...p, is_active: !current } : p));
+    showToast('success', !current ? 'Property activated' : 'Property deactivated');
   };
 
   const deleteProperty = async (id: string) => {
-    if (!confirm(language === 'en' ? 'Delete this property?' : '删除此房产？')) return;
-
-    try {
-      await supabase.from('featured_properties').delete().eq('id', id);
-      setFeaturedProperties(featuredProperties.filter((p) => p.id !== id));
-      alert(language === 'en' ? 'Property deleted' : '房产已删除');
-    } catch (error) {
-      console.error('Error deleting:', error);
-      alert(language === 'en' ? 'Failed to delete' : '删除失败');
-    }
+    if (!window.confirm('Delete this property?')) return;
+    const { error } = await supabase.from('featured_properties').delete().eq('id', id);
+    if (error) { showToast('error', 'Failed to delete'); return; }
+    setFeaturedProperties(prev => prev.filter(p => p.id !== id));
+    showToast('success', 'Property deleted');
   };
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+
+  const fmt = (d: string) => new Date(d).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+  const fmtCurrency = (n?: number) => n != null ? `$${Number(n).toLocaleString()}` : '—';
+
+  // ─── Login screen ─────────────────────────────────────────────────────────
 
   if (!authenticated) {
     return (
       <div className="min-h-screen bg-[#0a1628] flex items-center justify-center p-4">
-        <div className="bg-[#1e3a5f] p-8 rounded-xl border border-[#d4af37]/20 w-full max-w-md">
+        <div className="bg-[#0d1f35] border border-[#C9A84C]/20 p-8 rounded-2xl w-full max-w-md shadow-2xl">
           <div className="flex justify-center mb-6">
-            <div className="p-4 bg-[#d4af37]/10 rounded-full">
-              <Lock className="text-[#d4af37]" size={32} />
+            <div className="p-4 bg-[#C9A84C]/10 rounded-full">
+              <Lock className="text-[#C9A84C]" size={32} />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-4 text-center">
-            {language === 'en' ? 'Admin' : '管理员'}
-          </h1>
+          <h1 className="text-2xl font-bold text-white mb-1 text-center">Admin Portal</h1>
+          <p className="text-gray-500 text-sm text-center mb-6">LuxHunter CMS</p>
+
+          {isLocked && (
+            <div className="mb-4 p-3 bg-red-900/30 border border-red-600/40 rounded-lg text-red-400 text-sm text-center">
+              Too many failed attempts. Try again in 15 minutes.
+            </div>
+          )}
+          {!isLocked && loginAttempts > 0 && (
+            <div className="mb-4 p-3 bg-red-900/30 border border-red-600/40 rounded-lg text-red-400 text-sm text-center">
+              Incorrect password — {5 - loginAttempts} attempt{5 - loginAttempts !== 1 ? 's' : ''} remaining
+            </div>
+          )}
+
           <div className="relative mb-4">
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={language === 'en' ? 'Password' : '密码'}
-              className="w-full p-3 pr-12 rounded bg-[#0a1628] text-white border border-[#d4af37]/30"
-              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Password"
+              className="w-full px-4 py-3 pr-12 bg-[#0a1628] text-white border border-[#C9A84C]/30 rounded-lg focus:outline-none focus:border-[#C9A84C]/60 transition-colors"
+              onKeyDown={e => e.key === 'Enter' && handleLogin()}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#d4af37]/60 hover:text-[#d4af37] transition-colors"
-            >
+            <button type="button" onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C9A84C]/50 hover:text-[#C9A84C] transition-colors">
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
-          <button
-            onClick={handleLogin}
-            disabled={isLocked}
-            className="w-full bg-[#d4af37] text-[#0a1628] py-3 rounded font-semibold hover:bg-[#e5c158] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLocked ? (language === 'en' ? 'Locked' : '已锁定') : (language === 'en' ? 'Login' : '登录')}
+
+          <button onClick={handleLogin} disabled={isLocked}
+            className="w-full bg-[#C9A84C] text-[#0a1628] py-3 rounded-lg font-bold hover:bg-[#d4b865] transition-colors disabled:opacity-40">
+            Login
           </button>
+
           <div className="mt-4 text-center">
-            {forgotPasswordStatus === 'sent' ? (
+            {forgotStatus === 'sent' ? (
               <p className="text-sm text-green-400">Password reminder sent to info@luxhunter.com</p>
-            ) : forgotPasswordStatus === 'error' ? (
-              <p className="text-sm text-red-400">Failed to send reminder. Please try again.</p>
+            ) : forgotStatus === 'error' ? (
+              <p className="text-sm text-red-400">Failed to send. Please try again.</p>
             ) : (
-              <button
-                type="button"
-                onClick={handleForgotPassword}
-                disabled={forgotPasswordStatus === 'sending'}
-                className="text-sm text-[#d4af37]/60 hover:text-[#d4af37] transition-colors disabled:opacity-50"
-              >
-                {forgotPasswordStatus === 'sending' ? 'Sending...' : 'Forgot Password?'}
+              <button onClick={handleForgotPassword} disabled={forgotStatus === 'sending'}
+                className="text-sm text-[#C9A84C]/50 hover:text-[#C9A84C] transition-colors disabled:opacity-50">
+                {forgotStatus === 'sending' ? 'Sending...' : 'Forgot Password?'}
               </button>
             )}
           </div>
@@ -425,711 +503,716 @@ const Admin = () => {
     );
   }
 
+  // ─── Dashboard ────────────────────────────────────────────────────────────
+
+  const tabs: { id: TabId; label: string; icon: React.ReactNode; badge?: number }[] = [
+    { id: 'leads', label: 'Leads', icon: <Users size={15} />, badge: contacts.length + freeReports.length + calcUnlocks.length },
+    { id: 'insights', label: 'Articles', icon: <FileText size={15} />, badge: insights.length },
+    { id: 'properties', label: 'Properties', icon: <Home size={15} />, badge: featuredProperties.length },
+    { id: 'rates', label: 'Interest Rates', icon: <TrendingUp size={15} /> },
+    { id: 'lvr', label: 'LVR Limits', icon: <BarChart2 size={15} /> },
+    { id: 'risk', label: 'Risk Postcodes', icon: <Settings size={15} />, badge: riskPostcodes.length },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#0A1628] px-4 py-12">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-white">
-            {language === 'en' ? 'Admin Dashboard' : '管理仪表板'}
-          </h1>
-          <div className="flex gap-3">
-            <button
-              onClick={() => { setShowChangePassword(true); setCpError(''); setCpSuccess(false); }}
-              className="flex items-center gap-2 px-4 py-2 bg-[#C9A84C]/20 text-[#C9A84C] border border-[#C9A84C]/40 rounded hover:bg-[#C9A84C]/30 transition-colors"
-            >
-              <KeyRound size={16} />
-              {language === 'en' ? 'Change Password' : '更改密码'}
+    <div className="min-h-screen bg-[#080f1e]">
+
+      {/* Toast notifications */}
+      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+        {toasts.map(t => (
+          <div key={t.id} className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border text-sm font-medium ${
+            t.type === 'success'
+              ? 'bg-green-900/95 border-green-600/40 text-green-300'
+              : 'bg-red-900/95 border-red-600/40 text-red-300'
+          }`}>
+            {t.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+            <span>{t.message}</span>
+            <button onClick={() => dismiss(t.id)} className="ml-2 opacity-60 hover:opacity-100"><X size={14} /></button>
+          </div>
+        ))}
+      </div>
+
+      {/* Change password modal */}
+      {showChangePwd && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0d1f35] border border-[#C9A84C]/30 rounded-2xl p-8 w-full max-w-md relative shadow-2xl">
+            <button onClick={() => setShowChangePwd(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"><X size={20} /></button>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-[#C9A84C]/10 rounded-lg"><KeyRound className="text-[#C9A84C]" size={20} /></div>
+              <h2 className="text-xl font-bold text-white">Change Password</h2>
+            </div>
+            {cpSuccess ? (
+              <div className="text-center py-6">
+                <CheckCircle className="text-green-400 mx-auto mb-3" size={48} />
+                <p className="text-green-400 font-semibold text-lg">Password updated successfully!</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <Field label="Current Password">
+                  <div className="relative">
+                    <input type={cpShowCurrent ? 'text' : 'password'} value={cpCurrent}
+                      onChange={e => setCpCurrent(e.target.value)} className={inputCls + ' pr-12'} placeholder="Enter current password" />
+                    <button type="button" onClick={() => setCpShowCurrent(!cpShowCurrent)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C9A84C]/50 hover:text-[#C9A84C] transition-colors">
+                      {cpShowCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </Field>
+                <Field label="New Password">
+                  <div className="relative">
+                    <input type={cpShowNew ? 'text' : 'password'} value={cpNew}
+                      onChange={e => setCpNew(e.target.value)} className={inputCls + ' pr-12'} placeholder="At least 8 characters" />
+                    <button type="button" onClick={() => setCpShowNew(!cpShowNew)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C9A84C]/50 hover:text-[#C9A84C] transition-colors">
+                      {cpShowNew ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </Field>
+                <Field label="Confirm New Password">
+                  <div className="relative">
+                    <input type={cpShowConfirm ? 'text' : 'password'} value={cpConfirm}
+                      onChange={e => setCpConfirm(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleChangePassword()}
+                      className={inputCls + ' pr-12'} placeholder="Repeat new password" />
+                    <button type="button" onClick={() => setCpShowConfirm(!cpShowConfirm)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C9A84C]/50 hover:text-[#C9A84C] transition-colors">
+                      {cpShowConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </Field>
+                {cpError && <p className="text-red-400 text-sm">{cpError}</p>}
+                <div className="flex gap-3 pt-1">
+                  <button onClick={handleChangePassword} className={btnGold + ' flex-1 justify-center'}>Update Password</button>
+                  <button onClick={() => setShowChangePwd(false)} className={btnGhost}>Cancel</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <header className="bg-[#0d1f35] border-b border-[#C9A84C]/15 px-6 py-4 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-[#C9A84C] rounded-lg flex items-center justify-center shrink-0">
+              <span className="text-[#0a1628] font-black text-xs">LH</span>
+            </div>
+            <div>
+              <h1 className="text-white font-bold leading-none">LuxHunter</h1>
+              <p className="text-[#C9A84C]/50 text-xs">Admin CMS</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={loadData} disabled={loading}
+              className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-40" title="Refresh">
+              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             </button>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-            >
-              {language === 'en' ? 'Logout' : '登出'}
+            <button onClick={() => { setShowChangePwd(true); setCpError(''); setCpSuccess(false); }}
+              className="flex items-center gap-2 px-3 py-2 bg-[#C9A84C]/10 text-[#C9A84C] border border-[#C9A84C]/25 rounded-lg hover:bg-[#C9A84C]/20 transition-colors text-sm">
+              <KeyRound size={14} /> Change Password
+            </button>
+            <button onClick={handleLogout}
+              className="flex items-center gap-2 px-3 py-2 bg-red-600/10 text-red-400 border border-red-600/20 rounded-lg hover:bg-red-600/20 transition-colors text-sm">
+              Logout
             </button>
           </div>
         </div>
+      </header>
 
-        {showChangePassword && (
-          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-            <div className="bg-[#0A1628] border border-[#C9A84C]/30 rounded-xl p-8 w-full max-w-md relative">
-              <button
-                onClick={() => setShowChangePassword(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
-              >
-                <X size={20} />
-              </button>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-[#C9A84C]/10 rounded-lg">
-                  <KeyRound className="text-[#C9A84C]" size={22} />
-                </div>
-                <h2 className="text-xl font-bold text-white">
-                  {language === 'en' ? 'Change Password' : '更改密码'}
-                </h2>
-              </div>
+      <div className="max-w-7xl mx-auto px-6 py-8">
 
-              {cpSuccess ? (
-                <div className="text-center py-6">
-                  <div className="w-14 h-14 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <svg className="w-7 h-7 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <p className="text-green-400 font-semibold text-lg">Password updated successfully!</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-[#C9A84C] text-sm mb-2">
-                      {language === 'en' ? 'Current Password' : '当前密码'}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={cpShowCurrent ? 'text' : 'password'}
-                        value={cpCurrent}
-                        onChange={(e) => setCpCurrent(e.target.value)}
-                        className="w-full px-4 py-3 pr-12 bg-[#1e3a5f] border border-[#C9A84C]/30 rounded text-white placeholder-gray-500 focus:outline-none focus:border-[#C9A84C]/60"
-                        placeholder={language === 'en' ? 'Enter current password' : '输入当前密码'}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setCpShowCurrent(!cpShowCurrent)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C9A84C]/50 hover:text-[#C9A84C] transition-colors"
-                      >
-                        {cpShowCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[#C9A84C] text-sm mb-2">
-                      {language === 'en' ? 'New Password' : '新密码'}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={cpShowNew ? 'text' : 'password'}
-                        value={cpNew}
-                        onChange={(e) => setCpNew(e.target.value)}
-                        className="w-full px-4 py-3 pr-12 bg-[#1e3a5f] border border-[#C9A84C]/30 rounded text-white placeholder-gray-500 focus:outline-none focus:border-[#C9A84C]/60"
-                        placeholder={language === 'en' ? 'At least 8 characters' : '至少8个字符'}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setCpShowNew(!cpShowNew)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C9A84C]/50 hover:text-[#C9A84C] transition-colors"
-                      >
-                        {cpShowNew ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[#C9A84C] text-sm mb-2">
-                      {language === 'en' ? 'Confirm New Password' : '确认新密码'}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={cpShowConfirm ? 'text' : 'password'}
-                        value={cpConfirm}
-                        onChange={(e) => setCpConfirm(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleChangePassword()}
-                        className="w-full px-4 py-3 pr-12 bg-[#1e3a5f] border border-[#C9A84C]/30 rounded text-white placeholder-gray-500 focus:outline-none focus:border-[#C9A84C]/60"
-                        placeholder={language === 'en' ? 'Repeat new password' : '重复新密码'}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setCpShowConfirm(!cpShowConfirm)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#C9A84C]/50 hover:text-[#C9A84C] transition-colors"
-                      >
-                        {cpShowConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {cpError && (
-                    <p className="text-red-400 text-sm">{cpError}</p>
-                  )}
-
-                  <div className="flex gap-3 pt-2">
-                    <button
-                      onClick={handleChangePassword}
-                      className="flex-1 bg-[#C9A84C] text-[#0A1628] py-3 rounded font-semibold hover:bg-[#d4b865] transition-colors"
-                    >
-                      {language === 'en' ? 'Update Password' : '更新密码'}
-                    </button>
-                    <button
-                      onClick={() => setShowChangePassword(false)}
-                      className="px-6 py-3 bg-white/10 text-white rounded hover:bg-white/20 transition-colors"
-                    >
-                      {language === 'en' ? 'Cancel' : '取消'}
-                    </button>
-                  </div>
-                </div>
+        {/* Tab nav */}
+        <div className="flex gap-1 mb-8 bg-[#0d1f35] border border-[#C9A84C]/15 rounded-xl p-1.5 flex-wrap">
+          {tabs.map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
+                activeTab === tab.id
+                  ? 'bg-[#C9A84C] text-[#0A1628] shadow-sm'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}>
+              {tab.icon}
+              {tab.label}
+              {tab.badge !== undefined && tab.badge > 0 && (
+                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+                  activeTab === tab.id ? 'bg-[#0a1628]/20 text-[#0a1628]' : 'bg-[#C9A84C]/20 text-[#C9A84C]'
+                }`}>{tab.badge}</span>
               )}
+            </button>
+          ))}
+        </div>
+
+        {/* ── LEADS ── */}
+        {activeTab === 'leads' && (
+          <div className="space-y-5">
+            <div className="flex gap-2 flex-wrap">
+              {([
+                { id: 'contacts' as LeadsTabId, label: 'Contacts', count: contacts.length },
+                { id: 'reports' as LeadsTabId, label: 'Free Reports', count: freeReports.length },
+                { id: 'calculator' as LeadsTabId, label: 'Calculator Unlocks', count: calcUnlocks.length },
+                { id: 'subscribers' as LeadsTabId, label: 'Newsletter', count: subscribers.length },
+              ]).map(st => (
+                <button key={st.id} onClick={() => setLeadsTab(st.id)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                    leadsTab === st.id
+                      ? 'bg-[#C9A84C]/15 text-[#C9A84C] border-[#C9A84C]/30'
+                      : 'text-gray-400 border-transparent hover:text-white hover:border-white/10'
+                  }`}>
+                  {st.label}
+                  <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
+                    leadsTab === st.id ? 'bg-[#C9A84C]/20 text-[#C9A84C]' : 'bg-white/10 text-gray-400'
+                  }`}>{st.count}</span>
+                </button>
+              ))}
             </div>
+
+            {/* Contacts */}
+            {leadsTab === 'contacts' && (
+              <div className="bg-[#0d1f35] border border-[#C9A84C]/15 rounded-xl overflow-hidden">
+                <div className="px-6 py-4 border-b border-[#C9A84C]/10">
+                  <h2 className="text-white font-semibold">Contact Form Submissions</h2>
+                </div>
+                {contacts.length === 0
+                  ? <p className="text-gray-500 text-center py-16">No submissions yet</p>
+                  : <div className="divide-y divide-white/5">
+                    {contacts.map(c => (
+                      <div key={c.id} className="px-6 py-4 hover:bg-white/2 transition-colors">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <span className="text-white font-medium">{c.name}</span>
+                            <span className="text-gray-400 text-sm">{c.email}</span>
+                            {c.phone && <span className="text-gray-500 text-sm">{c.phone}</span>}
+                            {c.preferred_contact && (
+                              <span className="px-2 py-0.5 bg-[#C9A84C]/10 text-[#C9A84C] text-xs rounded">
+                                via {c.preferred_contact}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-gray-500 text-xs shrink-0 ml-4">{fmt(c.created_at)}</span>
+                        </div>
+                        <p className="text-gray-300 text-sm">{c.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                }
+              </div>
+            )}
+
+            {/* Free Reports */}
+            {leadsTab === 'reports' && (
+              <div className="bg-[#0d1f35] border border-[#C9A84C]/15 rounded-xl overflow-hidden">
+                <div className="px-6 py-4 border-b border-[#C9A84C]/10">
+                  <h2 className="text-white font-semibold">Free Report Requests</h2>
+                </div>
+                {freeReports.length === 0
+                  ? <p className="text-gray-500 text-center py-16">No requests yet</p>
+                  : <div className="overflow-x-auto">
+                    <table className="w-full text-sm min-w-[900px]">
+                      <thead className="border-b border-[#C9A84C]/10">
+                        <tr>
+                          {['Date', 'Name', 'Email', 'Phone', 'State', 'Interest', 'Income', 'Deposit', 'Borrowing Cap.'].map(h => (
+                            <th key={h} className="px-4 py-3 text-left text-[#C9A84C] text-xs font-semibold uppercase tracking-wide">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {freeReports.map(r => (
+                          <tr key={r.id} className="hover:bg-white/2 transition-colors">
+                            <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{fmt(r.created_at)}</td>
+                            <td className="px-4 py-3 text-white whitespace-nowrap">{r.full_name || '—'}</td>
+                            <td className="px-4 py-3 text-gray-300">{r.email}</td>
+                            <td className="px-4 py-3 text-gray-400">{r.phone || '—'}</td>
+                            <td className="px-4 py-3 text-gray-400">{r.state || '—'}</td>
+                            <td className="px-4 py-3 text-gray-400">{r.interest_type || '—'}</td>
+                            <td className="px-4 py-3 text-gray-300">{fmtCurrency(r.annual_income)}</td>
+                            <td className="px-4 py-3 text-gray-300">{fmtCurrency(r.deposit_amount)}</td>
+                            <td className="px-4 py-3 text-[#C9A84C] font-semibold">{fmtCurrency(r.calculated_borrowing_capacity)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              </div>
+            )}
+
+            {/* Calculator Unlocks */}
+            {leadsTab === 'calculator' && (
+              <div className="bg-[#0d1f35] border border-[#C9A84C]/15 rounded-xl overflow-hidden">
+                <div className="px-6 py-4 border-b border-[#C9A84C]/10">
+                  <h2 className="text-white font-semibold">Calculator Unlocks</h2>
+                </div>
+                {calcUnlocks.length === 0
+                  ? <p className="text-gray-500 text-center py-16">No calculator unlocks yet</p>
+                  : <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="border-b border-[#C9A84C]/10">
+                        <tr>
+                          {['Date', 'Name', 'Email', 'State'].map(h => (
+                            <th key={h} className="px-4 py-3 text-left text-[#C9A84C] text-xs font-semibold uppercase tracking-wide">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {calcUnlocks.map(u => (
+                          <tr key={u.id} className="hover:bg-white/2 transition-colors">
+                            <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{fmt(u.created_at)}</td>
+                            <td className="px-4 py-3 text-white">{u.full_name}</td>
+                            <td className="px-4 py-3 text-gray-300">{u.email}</td>
+                            <td className="px-4 py-3 text-gray-400">{u.state || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              </div>
+            )}
+
+            {/* Subscribers */}
+            {leadsTab === 'subscribers' && (
+              <div className="bg-[#0d1f35] border border-[#C9A84C]/15 rounded-xl overflow-hidden">
+                <div className="px-6 py-4 border-b border-[#C9A84C]/10">
+                  <h2 className="text-white font-semibold">Newsletter Subscribers</h2>
+                </div>
+                {subscribers.length === 0
+                  ? <p className="text-gray-500 text-center py-16">No subscribers yet</p>
+                  : <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="border-b border-[#C9A84C]/10">
+                        <tr>
+                          {['Date', 'Name', 'Email', 'Status'].map(h => (
+                            <th key={h} className="px-4 py-3 text-left text-[#C9A84C] text-xs font-semibold uppercase tracking-wide">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {subscribers.map(s => (
+                          <tr key={s.id} className="hover:bg-white/2 transition-colors">
+                            <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{fmt(s.subscribed_at)}</td>
+                            <td className="px-4 py-3 text-white">{s.name || '—'}</td>
+                            <td className="px-4 py-3 text-gray-300">{s.email}</td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${s.is_active ? 'bg-green-900/40 text-green-400' : 'bg-gray-800 text-gray-500'}`}>
+                                {s.is_active ? 'Active' : 'Unsubscribed'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              </div>
+            )}
           </div>
         )}
 
-        <div className="flex gap-4 mb-6 flex-wrap">
-          <button
-            onClick={() => setActiveTab('insights')}
-            className={`px-6 py-3 rounded font-semibold transition-colors ${
-              activeTab === 'insights'
-                ? 'bg-[#C9A84C] text-[#0A1628]'
-                : 'bg-white/10 text-white hover:bg-white/20'
-            }`}
-          >
-            {language === 'en' ? 'Latest Insights' : '最新洞察'}
-          </button>
-          <button
-            onClick={() => setActiveTab('properties')}
-            className={`px-6 py-3 rounded font-semibold transition-colors ${
-              activeTab === 'properties'
-                ? 'bg-[#C9A84C] text-[#0A1628]'
-                : 'bg-white/10 text-white hover:bg-white/20'
-            }`}
-          >
-            {language === 'en' ? 'Featured Properties' : '精选房产'}
-          </button>
-          <button
-            onClick={() => setActiveTab('lvr')}
-            className={`px-6 py-3 rounded font-semibold transition-colors ${
-              activeTab === 'lvr'
-                ? 'bg-[#C9A84C] text-[#0A1628]'
-                : 'bg-white/10 text-white hover:bg-white/20'
-            }`}
-          >
-            {language === 'en' ? 'LVR Limits' : 'LVR限制'}
-          </button>
-          <button
-            onClick={() => setActiveTab('risk')}
-            className={`px-6 py-3 rounded font-semibold transition-colors ${
-              activeTab === 'risk'
-                ? 'bg-[#C9A84C] text-[#0A1628]'
-                : 'bg-white/10 text-white hover:bg-white/20'
-            }`}
-          >
-            {language === 'en' ? 'Risk Postcodes' : '风险邮编'}
-          </button>
-        </div>
-
+        {/* ── INSIGHTS ── */}
         {activeTab === 'insights' && (
           <div className="space-y-6">
-            <div className="bg-[#0D1F35] border border-[#C9A84C]/30 rounded-xl p-6">
-              <h2 className="text-xl font-semibold text-[#C9A84C] mb-4">
-                {language === 'en' ? 'Add New Article' : '添加新文章'}
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-[#C9A84C] text-sm mb-2">
-                    {language === 'en' ? 'Category' : '分类'}
-                  </label>
-                  <select
-                    value={newInsight.category}
-                    onChange={(e) => setNewInsight({...newInsight, category: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white [&>option]:text-gray-900 [&>option]:bg-white"
-                  >
-                    <option value="property">{language === 'en' ? 'Property Market' : '房产市场'}</option>
-                    <option value="mortgage">{language === 'en' ? 'Mortgage Trends' : '房贷动态'}</option>
-                    <option value="investment">{language === 'en' ? 'Investment' : '投资'}</option>
+            <div className="bg-[#0d1f35] border border-[#C9A84C]/15 rounded-xl p-6">
+              <h2 className="text-white font-semibold mb-5">Publish New Article</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field label="Category">
+                  <select value={newInsight.category} onChange={e => setNewInsight({ ...newInsight, category: e.target.value })} className={selectCls}>
+                    <option value="property">Property Market</option>
+                    <option value="mortgage">Mortgage Trends</option>
+                    <option value="investment">Investment</option>
                   </select>
+                </Field>
+                <Field label="Title">
+                  <input type="text" value={newInsight.title} onChange={e => setNewInsight({ ...newInsight, title: e.target.value })}
+                    placeholder="Article title" className={inputCls} />
+                </Field>
+                <div className="md:col-span-2">
+                  <Field label="Short Description (shown on card)">
+                    <textarea value={newInsight.description} onChange={e => setNewInsight({ ...newInsight, description: e.target.value })}
+                      placeholder="Brief summary" className={textareaCls} rows={2} />
+                  </Field>
                 </div>
-                <div>
-                  <label className="block text-[#C9A84C] text-sm mb-2">
-                    {language === 'en' ? 'Title' : '标题'}
-                  </label>
-                  <input
-                    type="text"
-                    placeholder={language === 'en' ? 'Enter title' : '输入标题'}
-                    value={newInsight.title}
-                    onChange={(e) => setNewInsight({...newInsight, title: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white placeholder-gray-500"
-                  />
+                <div className="md:col-span-2">
+                  <Field label="Full Content">
+                    <textarea value={newInsight.content} onChange={e => setNewInsight({ ...newInsight, content: e.target.value })}
+                      placeholder="Full article content" className={textareaCls} rows={6} />
+                  </Field>
                 </div>
-                <div>
-                  <label className="block text-[#C9A84C] text-sm mb-2">
-                    {language === 'en' ? 'Description' : '描述'}
-                  </label>
-                  <textarea
-                    placeholder={language === 'en' ? 'Enter description' : '输入描述'}
-                    value={newInsight.description}
-                    onChange={(e) => setNewInsight({...newInsight, description: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white placeholder-gray-500 h-24"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[#C9A84C] text-sm mb-2">
-                    {language === 'en' ? 'Full Content' : '完整内容'}
-                  </label>
-                  <textarea
-                    placeholder={language === 'en' ? 'Enter full content' : '输入完整内容'}
-                    value={newInsight.content}
-                    onChange={(e) => setNewInsight({...newInsight, content: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white placeholder-gray-500 h-32"
-                  />
-                </div>
-                <button
-                  onClick={addInsight}
-                  disabled={isSaving}
-                  className="flex items-center gap-2 bg-[#C9A84C] text-[#0A1628] px-6 py-3 rounded font-semibold hover:bg-[#d4b865] transition-colors disabled:opacity-50"
-                >
-                  <Plus size={20} />
-                  {isSaving ? (language === 'en' ? 'Adding...' : '添加中...') : language === 'en' ? 'Add Article' : '添加文章'}
+              </div>
+              <div className="mt-4">
+                <button onClick={addInsight} disabled={saving} className={btnGold}>
+                  <Plus size={16} />{saving ? 'Publishing...' : 'Publish Article'}
                 </button>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold text-white">
-                {language === 'en' ? 'Published Articles' : '已发布文章'}
-              </h3>
-              {insights.map((insight) => (
-                <div key={insight.id} className="bg-[#0D1F35] border border-[#C9A84C]/30 rounded-xl p-4">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <span className="inline-block px-3 py-1 bg-[#C9A84C]/20 text-[#C9A84C] text-sm rounded mb-2">
-                        {insight.category}
-                      </span>
-                      <h4 className="text-white font-semibold text-lg mb-2">{insight.title}</h4>
-                      <p className="text-gray-400 text-sm mb-2">{insight.description}</p>
-                      <p className="text-gray-500 text-xs">
-                        {new Date(insight.published_at).toLocaleDateString(language === 'en' ? 'en-AU' : 'zh-CN')}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => deleteInsight(insight.id)}
-                      className="p-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors ml-4"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {insights.length === 0 && (
-                <p className="text-gray-500 text-center py-8">
-                  {language === 'en' ? 'No articles yet' : '暂无文章'}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'lvr' && (
-          <div className="bg-[#0D1F35] border border-[#C9A84C]/30 rounded-xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-6">
-              {language === 'en' ? 'LVR Limits by Classification' : 'LVR分类限制'}
-            </h2>
-            <div className="space-y-6">
-              {lvrLimits.map((limit) => (
-                <div key={limit.id} className="grid grid-cols-5 gap-4 items-center">
-                  <div>
-                    <label className="block text-[#C9A84C] text-sm mb-2">Classification</label>
-                    <input
-                      type="text"
-                      value={limit.classification}
-                      disabled
-                      className="w-full px-4 py-2 bg-white/5 border border-[#C9A84C]/30 rounded text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[#C9A84C] text-sm mb-2">0-70% LVR</label>
-                    <input
-                      type="number"
-                      value={limit.lvr_0_70}
-                      onChange={(e) =>
-                        setLvrLimits(
-                          lvrLimits.map((l) =>
-                            l.id === limit.id ? { ...l, lvr_0_70: parseFloat(e.target.value) } : l
-                          )
-                        )
-                      }
-                      className="w-full px-4 py-2 bg-white/5 border border-[#C9A84C]/30 rounded text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[#C9A84C] text-sm mb-2">70-80% LVR</label>
-                    <input
-                      type="number"
-                      value={limit.lvr_70_80}
-                      onChange={(e) =>
-                        setLvrLimits(
-                          lvrLimits.map((l) =>
-                            l.id === limit.id ? { ...l, lvr_70_80: parseFloat(e.target.value) } : l
-                          )
-                        )
-                      }
-                      className="w-full px-4 py-2 bg-white/5 border border-[#C9A84C]/30 rounded text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[#C9A84C] text-sm mb-2">80-90% LVR</label>
-                    <input
-                      type="number"
-                      value={limit.lvr_80_90 || ''}
-                      onChange={(e) =>
-                        setLvrLimits(
-                          lvrLimits.map((l) =>
-                            l.id === limit.id
-                              ? { ...l, lvr_80_90: e.target.value ? parseFloat(e.target.value) : null }
-                              : l
-                          )
-                        )
-                      }
-                      placeholder="N/A"
-                      className="w-full px-4 py-2 bg-white/5 border border-[#C9A84C]/30 rounded text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[#C9A84C] text-sm mb-2">90-95% LVR</label>
-                    <input
-                      type="number"
-                      value={limit.lvr_90_95 || ''}
-                      onChange={(e) =>
-                        setLvrLimits(
-                          lvrLimits.map((l) =>
-                            l.id === limit.id
-                              ? { ...l, lvr_90_95: e.target.value ? parseFloat(e.target.value) : null }
-                              : l
-                          )
-                        )
-                      }
-                      placeholder="N/A"
-                      className="w-full px-4 py-2 bg-white/5 border border-[#C9A84C]/30 rounded text-white"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6">
-              <button
-                onClick={saveLVRLimits}
-                disabled={isSaving}
-                className="flex items-center gap-2 px-6 py-3 bg-[#C9A84C] text-[#0A1628] font-bold rounded hover:bg-[#d4b865] transition-colors disabled:opacity-50"
-              >
-                <Save size={20} />
-                {isSaving ? (language === 'en' ? 'Saving...' : '保存中...') : language === 'en' ? 'Save Changes' : '保存更改'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'risk' && (
-          <div className="bg-[#0D1F35] border border-[#C9A84C]/30 rounded-xl p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-white">
-                {language === 'en' ? 'Risk Postcodes' : '风险邮编'}
-              </h2>
-              <button
-                onClick={addRiskPostcode}
-                className="flex items-center gap-2 px-4 py-2 bg-[#C9A84C] text-[#0A1628] font-semibold rounded hover:bg-[#d4b865] transition-colors"
-              >
-                <Plus size={20} />
-                {language === 'en' ? 'Add' : '添加'}
-              </button>
-            </div>
-            <div className="space-y-4">
-              {riskPostcodes.map((risk) => (
-                <div key={risk.id} className="grid grid-cols-4 gap-4 items-center">
-                  <div>
-                    <label className="block text-[#C9A84C] text-sm mb-2">Postcode</label>
-                    <input
-                      type="number"
-                      value={risk.postcode}
-                      onChange={(e) =>
-                        setRiskPostcodes(
-                          riskPostcodes.map((r) =>
-                            r.id === risk.id ? { ...r, postcode: parseInt(e.target.value) } : r
-                          )
-                        )
-                      }
-                      className="w-full px-4 py-2 bg-white/5 border border-[#C9A84C]/30 rounded text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[#C9A84C] text-sm mb-2">Risk Level</label>
-                    <select
-                      value={risk.risk_level}
-                      onChange={(e) =>
-                        setRiskPostcodes(
-                          riskPostcodes.map((r) =>
-                            r.id === risk.id ? { ...r, risk_level: e.target.value } : r
-                          )
-                        )
-                      }
-                      className="w-full px-4 py-2 bg-white/5 border border-[#C9A84C]/30 rounded text-white [&>option]:text-gray-900 [&>option]:bg-white"
-                    >
-                      <option value="High-Risk">High-Risk</option>
-                      <option value="Unacceptable">Unacceptable</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[#C9A84C] text-sm mb-2">Notes</label>
-                    <input
-                      type="text"
-                      value={risk.notes}
-                      onChange={(e) =>
-                        setRiskPostcodes(
-                          riskPostcodes.map((r) =>
-                            r.id === risk.id ? { ...r, notes: e.target.value } : r
-                          )
-                        )
-                      }
-                      className="w-full px-4 py-2 bg-white/5 border border-[#C9A84C]/30 rounded text-white"
-                    />
-                  </div>
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => deleteRiskPostcode(risk.id)}
-                      className="p-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                    >
-                      <Trash2 size={20} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6">
-              <button
-                onClick={saveRiskPostcodes}
-                disabled={isSaving}
-                className="flex items-center gap-2 px-6 py-3 bg-[#C9A84C] text-[#0A1628] font-bold rounded hover:bg-[#d4b865] transition-colors disabled:opacity-50"
-              >
-                <Save size={20} />
-                {isSaving ? (language === 'en' ? 'Saving...' : '保存中...') : language === 'en' ? 'Save Changes' : '保存更改'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'properties' && (
-          <div className="space-y-6">
-            <div className="bg-[#0D1F35] border border-[#C9A84C]/30 rounded-xl p-6">
-              <h2 className="text-xl font-semibold text-[#C9A84C] mb-4">
-                {language === 'en' ? 'Add New Property' : '添加新房产'}
-              </h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[#C9A84C] text-sm mb-2">Title*</label>
-                  <input
-                    type="text"
-                    placeholder="Luxury Waterfront Apartment"
-                    value={newProperty.title}
-                    onChange={(e) => setNewProperty({...newProperty, title: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white placeholder-gray-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[#C9A84C] text-sm mb-2">Location*</label>
-                  <input
-                    type="text"
-                    placeholder="Sydney Harbour, NSW"
-                    value={newProperty.location}
-                    onChange={(e) => setNewProperty({...newProperty, location: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white placeholder-gray-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[#C9A84C] text-sm mb-2">State*</label>
-                  <select
-                    value={newProperty.state}
-                    onChange={(e) => setNewProperty({...newProperty, state: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white [&>option]:text-gray-900 [&>option]:bg-white"
-                  >
-                    <option value="NSW">NSW</option>
-                    <option value="VIC">VIC</option>
-                    <option value="QLD">QLD</option>
-                    <option value="WA">WA</option>
-                    <option value="SA">SA</option>
-                    <option value="TAS">TAS</option>
-                    <option value="ACT">ACT</option>
-                    <option value="NT">NT</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[#C9A84C] text-sm mb-2">Price*</label>
-                  <input
-                    type="text"
-                    placeholder="$2.5M"
-                    value={newProperty.price}
-                    onChange={(e) => setNewProperty({...newProperty, price: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white placeholder-gray-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[#C9A84C] text-sm mb-2">Tag</label>
-                  <input
-                    type="text"
-                    placeholder="Premium Location"
-                    value={newProperty.tag}
-                    onChange={(e) => setNewProperty({...newProperty, tag: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white placeholder-gray-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[#C9A84C] text-sm mb-2">Display Order</label>
-                  <input
-                    type="number"
-                    value={newProperty.display_order}
-                    onChange={(e) => setNewProperty({...newProperty, display_order: parseInt(e.target.value)})}
-                    className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-[#C9A84C] text-sm mb-2">Image URL*</label>
-                  <input
-                    type="text"
-                    placeholder="https://images.pexels.com/..."
-                    value={newProperty.image_url}
-                    onChange={(e) => setNewProperty({...newProperty, image_url: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white placeholder-gray-500"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-[#C9A84C] text-sm mb-2">Description*</label>
-                  <textarea
-                    placeholder="3 bed, 2 bath with stunning harbour views"
-                    value={newProperty.description}
-                    onChange={(e) => setNewProperty({...newProperty, description: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/5 border border-[#C9A84C]/30 rounded text-white placeholder-gray-500 h-24"
-                  />
-                </div>
-              </div>
-              <button
-                onClick={addProperty}
-                disabled={isSaving}
-                className="mt-4 flex items-center gap-2 bg-[#C9A84C] text-[#0A1628] px-6 py-3 rounded font-semibold hover:bg-[#d4b865] transition-colors disabled:opacity-50"
-              >
-                <Plus size={20} />
-                {isSaving ? (language === 'en' ? 'Adding...' : '添加中...') : language === 'en' ? 'Add Property' : '添加房产'}
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold text-white">
-                {language === 'en' ? 'Manage Properties' : '管理房产'}
-              </h3>
-              {featuredProperties.map((property) => (
-                <div key={property.id} className="bg-[#0D1F35] border border-[#C9A84C]/30 rounded-xl p-4">
-                  {editingProperty === property.id ? (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-[#C9A84C] text-sm mb-2">Title</label>
-                          <input
-                            type="text"
-                            defaultValue={property.title}
-                            id={`title-${property.id}`}
-                            className="w-full px-4 py-2 bg-white/5 border border-[#C9A84C]/30 rounded text-white"
-                          />
+            <h3 className="text-white font-semibold text-lg">Published Articles ({insights.length})</h3>
+            {insights.length === 0 && <p className="text-gray-500 text-center py-12 bg-[#0d1f35] border border-[#C9A84C]/15 rounded-xl">No articles yet</p>}
+            <div className="space-y-3">
+              {insights.map(insight => (
+                <div key={insight.id} className="bg-[#0d1f35] border border-[#C9A84C]/15 rounded-xl overflow-hidden">
+                  {editingInsight?.id === insight.id ? (
+                    <div className="p-5 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Field label="Category">
+                          <select value={editingInsight.category} onChange={e => setEditingInsight({ ...editingInsight, category: e.target.value })} className={selectCls}>
+                            <option value="property">Property Market</option>
+                            <option value="mortgage">Mortgage Trends</option>
+                            <option value="investment">Investment</option>
+                          </select>
+                        </Field>
+                        <Field label="Title">
+                          <input type="text" value={editingInsight.title}
+                            onChange={e => setEditingInsight({ ...editingInsight, title: e.target.value })} className={inputCls} />
+                        </Field>
+                        <div className="md:col-span-2">
+                          <Field label="Short Description">
+                            <textarea value={editingInsight.description}
+                              onChange={e => setEditingInsight({ ...editingInsight, description: e.target.value })}
+                              className={textareaCls} rows={2} />
+                          </Field>
                         </div>
-                        <div>
-                          <label className="block text-[#C9A84C] text-sm mb-2">Location</label>
-                          <input
-                            type="text"
-                            defaultValue={property.location}
-                            id={`location-${property.id}`}
-                            className="w-full px-4 py-2 bg-white/5 border border-[#C9A84C]/30 rounded text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[#C9A84C] text-sm mb-2">Price</label>
-                          <input
-                            type="text"
-                            defaultValue={property.price}
-                            id={`price-${property.id}`}
-                            className="w-full px-4 py-2 bg-white/5 border border-[#C9A84C]/30 rounded text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[#C9A84C] text-sm mb-2">Display Order</label>
-                          <input
-                            type="number"
-                            defaultValue={property.display_order}
-                            id={`order-${property.id}`}
-                            className="w-full px-4 py-2 bg-white/5 border border-[#C9A84C]/30 rounded text-white"
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <label className="block text-[#C9A84C] text-sm mb-2">Description</label>
-                          <textarea
-                            defaultValue={property.description}
-                            id={`desc-${property.id}`}
-                            className="w-full px-4 py-2 bg-white/5 border border-[#C9A84C]/30 rounded text-white h-20"
-                          />
+                        <div className="md:col-span-2">
+                          <Field label="Full Content">
+                            <textarea value={editingInsight.content}
+                              onChange={e => setEditingInsight({ ...editingInsight, content: e.target.value })}
+                              className={textareaCls} rows={6} />
+                          </Field>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            const title = (document.getElementById(`title-${property.id}`) as HTMLInputElement).value;
-                            const location = (document.getElementById(`location-${property.id}`) as HTMLInputElement).value;
-                            const price = (document.getElementById(`price-${property.id}`) as HTMLInputElement).value;
-                            const description = (document.getElementById(`desc-${property.id}`) as HTMLTextAreaElement).value;
-                            const display_order = parseInt((document.getElementById(`order-${property.id}`) as HTMLInputElement).value);
-                            updateProperty(property.id, { title, location, price, description, display_order });
-                          }}
-                          className="px-4 py-2 bg-[#C9A84C] text-[#0A1628] rounded font-semibold hover:bg-[#d4b865] transition-colors"
-                        >
-                          {language === 'en' ? 'Save' : '保存'}
+                      <div className="flex gap-3">
+                        <button onClick={saveInsight} disabled={saving} className={btnGold}>
+                          <Save size={16} />{saving ? 'Saving...' : 'Save Changes'}
                         </button>
-                        <button
-                          onClick={() => setEditingProperty(null)}
-                          className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-                        >
-                          {language === 'en' ? 'Cancel' : '取消'}
-                        </button>
+                        <button onClick={() => setEditingInsight(null)} className={btnGhost}>Cancel</button>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex gap-4">
-                      <img src={property.image_url} alt={property.title} className="w-32 h-24 object-cover rounded" />
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h4 className="text-white font-semibold text-lg">{property.title}</h4>
-                            <p className="text-gray-400 text-sm">{property.location}</p>
-                            <p className="text-[#C9A84C] font-bold">{property.price}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => togglePropertyActive(property.id, property.is_active)}
-                              className={`p-2 rounded transition-colors ${property.is_active ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} text-white`}
-                              title={property.is_active ? 'Active' : 'Inactive'}
-                            >
-                              {property.is_active ? <Eye size={18} /> : <EyeOff size={18} />}
-                            </button>
-                            <button
-                              onClick={() => setEditingProperty(property.id)}
-                              className="p-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                            >
-                              <Edit2 size={18} />
-                            </button>
-                            <button
-                              onClick={() => deleteProperty(property.id)}
-                              className="p-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
+                    <div className="p-5 flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="px-2 py-0.5 bg-[#C9A84C]/15 text-[#C9A84C] text-xs rounded font-medium capitalize">{insight.category}</span>
+                          <span className="text-gray-500 text-xs">{fmt(insight.published_at)}</span>
                         </div>
-                        <p className="text-gray-500 text-sm">{property.description}</p>
-                        {property.tag && (
-                          <span className="inline-block mt-2 px-2 py-1 bg-[#C9A84C]/20 text-[#C9A84C] text-xs rounded">
-                            {property.tag}
-                          </span>
-                        )}
+                        <h4 className="text-white font-semibold mb-1">{insight.title}</h4>
+                        <p className="text-gray-400 text-sm line-clamp-2">{insight.description}</p>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <button onClick={() => setEditingInsight(insight)}
+                          className="p-2 bg-blue-600/15 text-blue-400 border border-blue-600/25 rounded-lg hover:bg-blue-600/25 transition-colors">
+                          <Edit2 size={15} />
+                        </button>
+                        <button onClick={() => deleteInsight(insight.id)}
+                          className="p-2 bg-red-600/15 text-red-400 border border-red-600/25 rounded-lg hover:bg-red-600/25 transition-colors">
+                          <Trash2 size={15} />
+                        </button>
                       </div>
                     </div>
                   )}
                 </div>
               ))}
-              {featuredProperties.length === 0 && (
-                <p className="text-gray-500 text-center py-8">
-                  {language === 'en' ? 'No properties yet' : '暂无房产'}
-                </p>
-              )}
             </div>
           </div>
         )}
+
+        {/* ── PROPERTIES ── */}
+        {activeTab === 'properties' && (
+          <div className="space-y-6">
+            <div className="bg-[#0d1f35] border border-[#C9A84C]/15 rounded-xl p-6">
+              <h2 className="text-white font-semibold mb-5">Add New Property</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field label="Title *">
+                  <input type="text" value={newProperty.title} onChange={e => setNewProperty({ ...newProperty, title: e.target.value })}
+                    placeholder="Luxury Waterfront Apartment" className={inputCls} />
+                </Field>
+                <Field label="Location *">
+                  <input type="text" value={newProperty.location} onChange={e => setNewProperty({ ...newProperty, location: e.target.value })}
+                    placeholder="Sydney Harbour, NSW" className={inputCls} />
+                </Field>
+                <Field label="State">
+                  <select value={newProperty.state} onChange={e => setNewProperty({ ...newProperty, state: e.target.value })} className={selectCls}>
+                    {['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'].map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </Field>
+                <Field label="Price *">
+                  <input type="text" value={newProperty.price} onChange={e => setNewProperty({ ...newProperty, price: e.target.value })}
+                    placeholder="$2.5M" className={inputCls} />
+                </Field>
+                <Field label="Tag">
+                  <input type="text" value={newProperty.tag} onChange={e => setNewProperty({ ...newProperty, tag: e.target.value })}
+                    placeholder="Premium Location" className={inputCls} />
+                </Field>
+                <Field label="Display Order">
+                  <input type="number" value={newProperty.display_order}
+                    onChange={e => setNewProperty({ ...newProperty, display_order: parseInt(e.target.value) || 0 })} className={inputCls} />
+                </Field>
+                <div className="md:col-span-2">
+                  <Field label="Image URL *">
+                    <input type="text" value={newProperty.image_url} onChange={e => setNewProperty({ ...newProperty, image_url: e.target.value })}
+                      placeholder="https://images.pexels.com/..." className={inputCls} />
+                  </Field>
+                </div>
+                <div className="md:col-span-2">
+                  <Field label="Description *">
+                    <textarea value={newProperty.description} onChange={e => setNewProperty({ ...newProperty, description: e.target.value })}
+                      placeholder="3 bed, 2 bath with stunning harbour views" className={textareaCls} rows={3} />
+                  </Field>
+                </div>
+              </div>
+              <div className="mt-4">
+                <button onClick={addProperty} disabled={saving} className={btnGold}>
+                  <Plus size={16} />{saving ? 'Adding...' : 'Add Property'}
+                </button>
+              </div>
+            </div>
+
+            <h3 className="text-white font-semibold text-lg">Manage Properties ({featuredProperties.length})</h3>
+            {featuredProperties.length === 0 && <p className="text-gray-500 text-center py-12 bg-[#0d1f35] border border-[#C9A84C]/15 rounded-xl">No properties yet</p>}
+            <div className="space-y-3">
+              {featuredProperties.map(prop => (
+                <div key={prop.id} className="bg-[#0d1f35] border border-[#C9A84C]/15 rounded-xl overflow-hidden">
+                  {editingProperty?.id === prop.id ? (
+                    <div className="p-5 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Field label="Title">
+                          <input type="text" value={editingProperty.title}
+                            onChange={e => setEditingProperty({ ...editingProperty, title: e.target.value })} className={inputCls} />
+                        </Field>
+                        <Field label="Location">
+                          <input type="text" value={editingProperty.location}
+                            onChange={e => setEditingProperty({ ...editingProperty, location: e.target.value })} className={inputCls} />
+                        </Field>
+                        <Field label="State">
+                          <select value={editingProperty.state} onChange={e => setEditingProperty({ ...editingProperty, state: e.target.value })} className={selectCls}>
+                            {['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'].map(s => <option key={s}>{s}</option>)}
+                          </select>
+                        </Field>
+                        <Field label="Price">
+                          <input type="text" value={editingProperty.price}
+                            onChange={e => setEditingProperty({ ...editingProperty, price: e.target.value })} className={inputCls} />
+                        </Field>
+                        <Field label="Tag">
+                          <input type="text" value={editingProperty.tag}
+                            onChange={e => setEditingProperty({ ...editingProperty, tag: e.target.value })} className={inputCls} />
+                        </Field>
+                        <Field label="Display Order">
+                          <input type="number" value={editingProperty.display_order}
+                            onChange={e => setEditingProperty({ ...editingProperty, display_order: parseInt(e.target.value) || 0 })} className={inputCls} />
+                        </Field>
+                        <div className="md:col-span-2">
+                          <Field label="Image URL">
+                            <input type="text" value={editingProperty.image_url}
+                              onChange={e => setEditingProperty({ ...editingProperty, image_url: e.target.value })} className={inputCls} />
+                          </Field>
+                        </div>
+                        <div className="md:col-span-2">
+                          <Field label="Description">
+                            <textarea value={editingProperty.description}
+                              onChange={e => setEditingProperty({ ...editingProperty, description: e.target.value })}
+                              className={textareaCls} rows={3} />
+                          </Field>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <button onClick={saveProperty} disabled={saving} className={btnGold}>
+                          <Save size={16} />{saving ? 'Saving...' : 'Save Changes'}
+                        </button>
+                        <button onClick={() => setEditingProperty(null)} className={btnGhost}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 flex gap-4 items-start">
+                      {prop.image_url && (
+                        <img src={prop.image_url} alt={prop.title} className="w-28 h-20 object-cover rounded-lg shrink-0 bg-gray-800" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-3 mb-1">
+                          <div>
+                            <h4 className="text-white font-semibold">{prop.title}</h4>
+                            <p className="text-gray-400 text-sm">{prop.location} · {prop.state}</p>
+                            <p className="text-[#C9A84C] font-bold text-sm mt-0.5">{prop.price}</p>
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <button onClick={() => togglePropertyActive(prop.id, prop.is_active)}
+                              className={`p-2 rounded-lg border transition-colors ${prop.is_active ? 'bg-green-900/25 text-green-400 border-green-600/25 hover:bg-green-900/40' : 'bg-gray-800/60 text-gray-500 border-gray-600/25 hover:bg-gray-700/60'}`}
+                              title={prop.is_active ? 'Active — click to deactivate' : 'Inactive — click to activate'}>
+                              {prop.is_active ? <Eye size={15} /> : <EyeOff size={15} />}
+                            </button>
+                            <button onClick={() => setEditingProperty(prop)}
+                              className="p-2 bg-blue-600/15 text-blue-400 border border-blue-600/25 rounded-lg hover:bg-blue-600/25 transition-colors">
+                              <Edit2 size={15} />
+                            </button>
+                            <button onClick={() => deleteProperty(prop.id)}
+                              className="p-2 bg-red-600/15 text-red-400 border border-red-600/25 rounded-lg hover:bg-red-600/25 transition-colors">
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-gray-500 text-xs line-clamp-1">{prop.description}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {prop.tag && <span className="px-2 py-0.5 bg-[#C9A84C]/10 text-[#C9A84C] text-xs rounded">{prop.tag}</span>}
+                          <span className="text-gray-600 text-xs">Order: {prop.display_order}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── INTEREST RATES ── */}
+        {activeTab === 'rates' && (
+          <div className="bg-[#0d1f35] border border-[#C9A84C]/15 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-white font-semibold text-lg">Interest Rates</h2>
+                <p className="text-gray-500 text-sm mt-0.5">Rates used in the borrowing capacity calculator</p>
+              </div>
+              <button onClick={saveRates} disabled={saving} className={btnGold}>
+                <Save size={16} />{saving ? 'Saving...' : 'Save All Changes'}
+              </button>
+            </div>
+            {interestRates.length === 0
+              ? <p className="text-gray-500 text-center py-16">No interest rate records found</p>
+              : <div className="space-y-3">
+                {interestRates.map(rate => (
+                  <div key={rate.id} className="flex items-center gap-6 p-4 bg-[#0a1628] border border-[#C9A84C]/10 rounded-xl">
+                    <div className="flex-1">
+                      <p className="text-[#C9A84C] text-xs font-semibold uppercase tracking-wide mb-1">Product Type</p>
+                      <input type="text" value={rate.product_type} disabled
+                        className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-gray-400 text-sm cursor-not-allowed" />
+                    </div>
+                    <div className="w-40">
+                      <p className="text-[#C9A84C] text-xs font-semibold uppercase tracking-wide mb-1">Rate (%)</p>
+                      <input type="number" step="0.01" value={rate.rate}
+                        onChange={e => setInterestRates(prev => prev.map(r => r.id === rate.id ? { ...r, rate: parseFloat(e.target.value) || 0 } : r))}
+                        className={inputCls} />
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-gray-500 text-xs">Last updated</p>
+                      <p className="text-gray-400 text-xs mt-0.5">{fmt(rate.updated_at)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            }
+          </div>
+        )}
+
+        {/* ── LVR LIMITS ── */}
+        {activeTab === 'lvr' && (
+          <div className="bg-[#0d1f35] border border-[#C9A84C]/15 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-white font-semibold text-lg">LVR Limits by Classification</h2>
+                <p className="text-gray-500 text-sm mt-0.5">Maximum loan amounts ($) per LVR band</p>
+              </div>
+              <button onClick={saveLVR} disabled={saving} className={btnGold}>
+                <Save size={16} />{saving ? 'Saving...' : 'Save All Changes'}
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="border-b border-[#C9A84C]/15">
+                  <tr>
+                    {['Classification', '0–70% LVR ($)', '70–80% LVR ($)', '80–90% LVR ($)', '90–95% LVR ($)'].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-[#C9A84C] text-xs font-semibold uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {lvrLimits.map(limit => (
+                    <tr key={limit.id} className="hover:bg-white/2">
+                      <td className="px-4 py-3">
+                        <input type="text" value={limit.classification} disabled
+                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-gray-400 text-sm cursor-not-allowed" />
+                      </td>
+                      {([
+                        { key: 'lvr_0_70' as keyof LVRLimit, val: limit.lvr_0_70, nullable: false },
+                        { key: 'lvr_70_80' as keyof LVRLimit, val: limit.lvr_70_80, nullable: false },
+                        { key: 'lvr_80_90' as keyof LVRLimit, val: limit.lvr_80_90, nullable: true },
+                        { key: 'lvr_90_95' as keyof LVRLimit, val: limit.lvr_90_95, nullable: true },
+                      ]).map(({ key, val, nullable }) => (
+                        <td key={key} className="px-4 py-3">
+                          <input type="number" value={val ?? ''} placeholder={nullable ? 'N/A' : ''}
+                            onChange={e => setLvrLimits(prev => prev.map(l =>
+                              l.id === limit.id ? { ...l, [key]: e.target.value ? parseFloat(e.target.value) : null } : l
+                            ))}
+                            className={inputCls} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ── RISK POSTCODES ── */}
+        {activeTab === 'risk' && (
+          <div className="bg-[#0d1f35] border border-[#C9A84C]/15 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-white font-semibold text-lg">Risk Postcodes</h2>
+                <p className="text-gray-500 text-sm mt-0.5">Postcodes flagged as High-Risk or Unacceptable for lending</p>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setRiskPostcodes(prev => [...prev, { id: crypto.randomUUID(), postcode: 0, risk_level: 'High-Risk', notes: '', isNew: true }])}
+                  className={btnGhost}><Plus size={16} />Add Row</button>
+                <button onClick={saveRisk} disabled={saving} className={btnGold}>
+                  <Save size={16} />{saving ? 'Saving...' : 'Save All'}
+                </button>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="border-b border-[#C9A84C]/15">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-[#C9A84C] text-xs font-semibold uppercase tracking-wide w-36">Postcode</th>
+                    <th className="px-4 py-3 text-left text-[#C9A84C] text-xs font-semibold uppercase tracking-wide w-44">Risk Level</th>
+                    <th className="px-4 py-3 text-left text-[#C9A84C] text-xs font-semibold uppercase tracking-wide">Notes</th>
+                    <th className="px-4 py-3 w-16"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {riskPostcodes.map(risk => (
+                    <tr key={risk.id} className={risk.isNew ? 'bg-[#C9A84C]/5' : 'hover:bg-white/2'}>
+                      <td className="px-4 py-2.5">
+                        <input type="number" value={risk.postcode}
+                          onChange={e => setRiskPostcodes(prev => prev.map(r => r.id === risk.id ? { ...r, postcode: parseInt(e.target.value) || 0 } : r))}
+                          className={inputCls} />
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <select value={risk.risk_level}
+                          onChange={e => setRiskPostcodes(prev => prev.map(r => r.id === risk.id ? { ...r, risk_level: e.target.value } : r))}
+                          className={selectCls}>
+                          <option value="High-Risk">High-Risk</option>
+                          <option value="Unacceptable">Unacceptable</option>
+                        </select>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <input type="text" value={risk.notes}
+                          onChange={e => setRiskPostcodes(prev => prev.map(r => r.id === risk.id ? { ...r, notes: e.target.value } : r))}
+                          placeholder="Notes..." className={inputCls} />
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        <button onClick={() => deleteRisk(risk.id, risk.isNew)}
+                          className="p-2 bg-red-600/15 text-red-400 border border-red-600/25 rounded-lg hover:bg-red-600/25 transition-colors">
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {riskPostcodes.length === 0 && <p className="text-gray-500 text-center py-16">No risk postcodes yet</p>}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
