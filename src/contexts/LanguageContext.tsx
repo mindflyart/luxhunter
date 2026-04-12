@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '../lib/supabase';
 
 type Language = 'en' | 'zh';
 
@@ -11,6 +12,10 @@ interface LanguageContextType {
 const translations = {
   en: {
     'nav.home': 'Home',
+    'error.fillFields': 'Please fill in both Name and Email fields.',
+    'error.alreadySubscribed': "You're already subscribed!",
+    'error.generic': 'Something went wrong. Please try again.',
+    'success.newsletter': 'Successfully subscribed!',
     'nav.services': 'Services',
     'nav.calculator': 'Calculator',
     'nav.about': 'About',
@@ -134,7 +139,6 @@ const translations = {
     'footer.disclaimer': 'All financial information on this website is authorised and provided by Ribbon Finance Mortgage Management Pty Ltd (ACL 525880). This website is affiliated with Ribbon Finance. General advice only — not personal financial advice.',
     'success.freeReport': 'Thank you! Your free report request has been received.',
     'success.contact': 'Thank you! We will be in touch soon.',
-    'success.newsletter': 'Successfully subscribed to our newsletter!',
     'error.generic': 'Something went wrong. Please try again.',
     'home.featured.title': 'Featured Dream Property',
     'home.featured.subtitle': 'Premium properties across Australia\'s most sought-after locations',
@@ -192,16 +196,20 @@ const translations = {
   },
   zh: {
     'nav.home': '首页',
+    'error.fillFields': '请填写姓名和电子邮件。',
+    'error.alreadySubscribed': '您已订阅！',
+    'error.generic': '出了点问题，请重试。',
+    'success.newsletter': '订阅成功！',
     'nav.services': '服务',
     'nav.calculator': '计算器',
     'nav.about': '关于',
     'nav.contact': '联系',
     'hero.title.line1': '专业房产策略',
-    'hero.title.line2': '与贷款顾问',
+    'hero.title.line2': '与贷款咨询',
     'hero.subtitle': '为您提供专业的房产顾问与贷款咨询服务',
     'hero.cta': '获取免费报告',
     'home.calculator.title': '您的按揭估计表',
-    'home.calculator.subtitle': '对您的借贷能力 一目了然',
+    'home.calculator.subtitle': '对您的借贷能力一目了然',
     'home.calculator.annualIncome': '年收入',
     'home.calculator.deposit': '银行存款',
     'home.calculator.loanTerm': '按揭年份',
@@ -209,7 +217,7 @@ const translations = {
     'home.calculator.borrowingCapacity': '估计借贷总金额',
     'home.calculator.monthlyRepayment': '每月还贷额',
     'home.calculator.stampDuty': '印花税',
-    'home.calculator.disclaimer': '估计您的借贷：我们的持牌专家会给你一个专业的评估报告',
+    'home.calculator.disclaimer': '估计您的借贷：我们的持牌专家将为您提供专业评估报告',
     'home.calculator.ctaButton': '获得专业评估',
     'home.propertyCta.title': '让我们帮您获得心仪的房产？',
     'home.propertyCta.description': '我们会安排专家根据您的要求，为您提供专业的咨询建议',
@@ -227,7 +235,7 @@ const translations = {
     'services.commercial.title': '商业贷款',
     'services.commercial.desc': '商业房产投资的专业融资解决方案',
     'services.cta.title': '让我们帮您获得心仪的房产？',
-    'services.cta.description': '让我们的持牌专家帮您更有信心地获得心仪的房产',
+    'services.cta.description': '让我们的持牌专家帮您为您提供专业指导，帮助您自信地进入房产市场',
     'calculator.title': '房产投资计算器',
     'calculator.subtitle': '一目了然您的投资贷款比',
     'calculator.propertyPrice': '房产价格',
@@ -268,7 +276,7 @@ const translations = {
     'calculator.disclaimer': '以上内容仅供参考，不构成投资建议。',
     'about.title': '关于LuxHunter',
     'about.intro': '您值得信赖的房产咨询平台',
-    'about.desc': 'LuxHunter 是一个高端房产和贷款咨询平台，致力于帮助客户自信地驾驭澳大利亚房地产市场。我们的专业知识涵盖住宅购买、贷款咨询、投资策略和商业融资解决方案。',
+    'about.desc': 'LuxHunter 是一个高端房产和贷款咨询平台，致力于帮助客户自信地进入澳大利亚房地产市场。我们的专业知识涵盖住宅购买、贷款咨询、投资策略和商业融资解决方案。',
     'about.mission': '我们的使命',
     'about.missionDesc': '我们相信提供透明、专业和个性化的房产咨询服务。我们的平台为您提供专业建议和全面的市场洞察，帮助您做出明智的房产决策。',
     'about.ourValues': '我们的价值观',
@@ -312,10 +320,9 @@ const translations = {
     'footer.rights': '版权所有',
     'footer.privacy': '隐私政策',
     'footer.terms': '服务条款',
-    'footer.disclaimer': '本网站所有财务信息均由 Ribbon Finance Mortgage Management Pty Ltd（ACL 525880）授权提供。本网站隶属于 Ribbon Finance。仅供一般建议之用，非个人财务建议。',
+    'footer.disclaimer': '本网站所有财务信息均由 Ribbon Finance Mortgage Management Pty Ltd（ACL 525880）授权提供。本网站与 Ribbon Finance 合作。仅供一般建议之用，非个人财务建议。',
     'success.freeReport': '谢谢！我们已收到您的免费报告请求。',
     'success.contact': '谢谢！我们会尽快与您联系。',
-    'success.newsletter': '成功订阅我们的新闻通讯！',
     'error.generic': '出了点问题。请重试。',
     'home.featured.title': '精选梦想房产',
     'home.featured.subtitle': '澳大利亚最受欢迎地区的优质房产',
@@ -364,10 +371,10 @@ const translations = {
     'home.testimonials.sarah.quote': 'LuxHunter帮助我们轻松完成了复杂的按揭流程。他们的专业指导为我们节省了数千澳元，让我们在莫斯曼拥有了梦想中的家。',
     'home.testimonials.sarah.name': 'Sarah M.',
     'home.testimonials.sarah.location': '莫斯曼, 新南威尔士州',
-    'home.testimonials.james.quote': '从头到尾的卓越服务。团队为我们找到了完美的投资房产，并获得了极具竞争力的贷款利率。',
+    'home.testimonials.james.quote': '从头到尾都提供了卓越服务。团队为我们找到了完美的投资房产，并获得了极具有竞争力的贷款利率。',
     'home.testimonials.james.name': 'James L.',
     'home.testimonials.james.location': '图拉克, 维多利亚州',
-    'home.testimonials.michelle.quote': '专业、响应迅速，真正关心我们的财务目标。我们找不到更好的房产顾问了。',
+    'home.testimonials.michelle.quote': '他们专业、响应迅速，真正关心我们的财务目标。我们找不到更好的房产顾问了。',
     'home.testimonials.michelle.name': 'Michelle T.',
     'home.testimonials.michelle.location': '阿斯科特, 昆士兰州',
   },
@@ -375,10 +382,43 @@ const translations = {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+// Map site_settings keys to translation keys
+const contentKeyMap: Record<string, { en: string; zh: string }> = {
+  'hero.title': { en: 'content_hero_title_en', zh: 'content_hero_title_zh' },
+  'hero.subtitle': { en: 'content_hero_subtitle_en', zh: 'content_hero_subtitle_zh' },
+  'hero.cta': { en: 'content_hero_cta_en', zh: 'content_hero_cta_zh' },
+  'services.cta.title': { en: 'content_services_cta_title_en', zh: 'content_services_cta_title_zh' },
+  'services.cta.description': { en: 'content_services_cta_desc_en', zh: 'content_services_cta_desc_zh' },
+  'newsletter.title': { en: 'content_newsletter_title_en', zh: 'content_newsletter_title_zh' },
+  'newsletter.subtitle': { en: 'content_newsletter_subtitle_en', zh: 'content_newsletter_subtitle_zh' },
+  'footer.disclaimer': { en: 'content_footer_disclaimer_en', zh: 'content_footer_disclaimer_zh' },
+};
+
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useState<Language>('en');
+  const [overrides, setOverrides] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    supabase.from('site_settings').select('*').then(({ data }) => {
+      if (data) {
+        const map: Record<string, string> = {};
+        data.forEach((s: { key: string; value: string }) => { map[s.key] = s.value; });
+        setOverrides(map);
+      }
+    });
+  }, []);
 
   const t = (key: string): string => {
+    // Check for admin override first
+    const mapping = contentKeyMap[key];
+    if (mapping) {
+      const overrideKey = language === 'en' ? mapping.en : mapping.zh;
+      if (overrides[overrideKey]) return overrides[overrideKey];
+    }
+    // Handle hero.title specially (it's split into line1 + line2 in translations)
+    if (key === 'hero.title' && !contentKeyMap[key]) {
+      return translations[language]['hero.title.line1' as keyof typeof translations.en] || key;
+    }
     return translations[language][key as keyof typeof translations.en] || key;
   };
 

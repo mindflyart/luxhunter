@@ -21,7 +21,7 @@ const Newsletter: React.FC = () => {
     e.preventDefault();
 
     if (!formData.name.trim() || !formData.email.trim()) {
-      setMessage('Please fill in both Name and Email fields.');
+      setMessage(t('error.fillFields') || 'Please fill in both Name and Email fields.');
       return;
     }
 
@@ -33,22 +33,26 @@ const Newsletter: React.FC = () => {
       .insert({
         email: formData.email,
         name: formData.name || '',
-        preferences: {},
+        preferences: {
+          propertyNews: formData.propertyNews,
+          personalLoanUpdates: formData.personalLoanUpdates,
+          commercialLoanUpdates: formData.commercialLoanUpdates,
+        },
         is_active: true,
       });
 
     if (error) {
       if (error.code === '23505') {
-        setMessage("You're already subscribed!");
+        setMessage(t('error.alreadySubscribed') || "You're already subscribed!");
       } else {
         console.error('Newsletter insert error:', error);
-        setMessage('Something went wrong. Please try again.');
+        setMessage(t('error.generic') || 'Something went wrong. Please try again.');
       }
       setIsSubmitting(false);
       return;
     }
 
-    setMessage('Successfully subscribed!');
+    setMessage(t('success.newsletter') || 'Successfully subscribed!');
     setShowSuccessModal(true);
     setFormData({
       name: '',
@@ -59,6 +63,25 @@ const Newsletter: React.FC = () => {
     });
     setIsSubmitting(false);
 
+
+    // Sync subscriber to Airtable CRM
+    fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-to-airtable`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: formData.name,
+        email: formData.email,
+        source: "Newsletter",
+        interest: [
+          formData.propertyNews && "Property News",
+          formData.personalLoanUpdates && "Personal Loan Updates",
+          formData.commercialLoanUpdates && "Commercial Loan Updates",
+        ].filter(Boolean).join(", "),
+      }),
+    }).catch((err) => console.error("Airtable sync error:", err));
     fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-welcome-email`, {
       method: 'POST',
       headers: {

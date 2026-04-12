@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MessageCircle, Send } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSiteSettings, getSetting } from '../lib/useSiteSettings';
 import { supabase } from '../lib/supabase';
 
 const Contact: React.FC = () => {
@@ -107,7 +108,7 @@ const Contact: React.FC = () => {
                   Choose a time that works for you
                 </p>
                 <a
-                  href="https://calendly.com/newluxytc-pm/30min"
+                  href={getSetting(settings, "calendly_url", "https://calendly.com/newluxytc-pm/30min")}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -146,7 +147,7 @@ const Contact: React.FC = () => {
               </a>
 
               <a
-                href="https://wa.me/"
+                href={`https://wa.me/${getSetting(settings, "whatsapp_number", "61466679195")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center space-x-4 bg-white/5 border border-[#C9A84C]/20 rounded-lg p-6 hover:border-[#C9A84C] transition-all group"

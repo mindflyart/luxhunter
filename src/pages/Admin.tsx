@@ -104,7 +104,7 @@ interface CalculatorUnlock {
   created_at: string;
 }
 
-type TabId = 'leads' | 'insights' | 'properties' | 'rates' | 'lvr' | 'risk';
+type TabId = 'leads' | 'insights' | 'properties' | 'rates' | 'lvr' | 'risk' | 'settings';
 type LeadsTabId = 'contacts' | 'reports' | 'calculator' | 'subscribers';
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
@@ -169,6 +169,9 @@ const Admin = () => {
   // Navigation
   const [activeTab, setActiveTab] = useState<TabId>('leads');
   const [leadsTab, setLeadsTab] = useState<LeadsTabId>('contacts');
+  // Settings
+  const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
+  const [settingsSaving, setSettingsSaving] = useState(false);
 
   // Data
   const [lvrLimits, setLvrLimits] = useState<LVRLimit[]>([]);
@@ -215,7 +218,7 @@ const Admin = () => {
 
   const loadData = async () => {
     setLoading(true);
-    const [lvr, risk, ins, props, rates, cont, reps, subs, calc] = await Promise.all([
+    const [lvr, risk, ins, props, rates, cont, reps, subs, calc, settings] = await Promise.all([
       supabase.from('lvr_limits').select('*').order('classification'),
       supabase.from('risk_postcodes').select('*').order('postcode'),
       supabase.from('latest_insights').select('*').order('published_at', { ascending: false }),
@@ -225,6 +228,7 @@ const Admin = () => {
       supabase.from('free_report_requests').select('*').order('created_at', { ascending: false }),
       supabase.from('newsletter_subscribers').select('*').order('subscribed_at', { ascending: false }),
       supabase.from('calculator_unlocks').select('*').order('created_at', { ascending: false }),
+      supabase.from('site_settings').select('*'),
     ]);
     if (lvr.data) setLvrLimits(lvr.data);
     if (risk.data) setRiskPostcodes(risk.data);
@@ -235,7 +239,27 @@ const Admin = () => {
     if (reps.data) setFreeReports(reps.data);
     if (subs.data) setSubscribers(subs.data);
     if (calc.data) setCalcUnlocks(calc.data);
+    if (settings.data) {
+      const settingsMap: Record<string, string> = {};
+      settings.data.forEach((s: { key: string; value: string }) => { settingsMap[s.key] = s.value; });
+      setSiteSettings(settingsMap);
+    }
     setLoading(false);
+  };
+
+  const saveSettings = async () => {
+    setSettingsSaving(true);
+    try {
+      const updates = Object.entries(siteSettings).map(([key, value]) =>
+        supabase.from('site_settings').update({ value, updated_at: new Date().toISOString() }).eq('key', key)
+      );
+      await Promise.all(updates);
+      showToast('success', 'Settings saved successfully');
+    } catch (err) {
+      console.error('Save settings error:', err);
+      showToast('error', 'Failed to save settings');
+    }
+    setSettingsSaving(false);
   };
 
   // ─── Auth handlers ─────────────────────────────────────────────────────────
@@ -552,6 +576,7 @@ const Admin = () => {
     { id: 'rates', label: 'Interest Rates', icon: <TrendingUp size={15} /> },
     { id: 'lvr', label: 'LVR Limits', icon: <BarChart2 size={15} /> },
     { id: 'risk', label: 'Risk Postcodes', icon: <Settings size={15} />, badge: riskPostcodes.length },
+{ id: 'settings', label: 'Settings', icon: <Settings size={15} /> },
   ];
 
   return (
@@ -1365,6 +1390,151 @@ const Admin = () => {
                 </tbody>
               </table>
               {riskPostcodes.length === 0 && <p className="text-gray-500 text-center py-16">No risk postcodes yet</p>}
+            </div>
+          </div>
+        )}
+
+
+        {activeTab === 'settings' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-white">Site Settings</h2>
+              <button onClick={saveSettings} disabled={settingsSaving} className={btnGold}>
+                <Save size={15} />
+                {settingsSaving ? 'Saving...' : 'Save All Settings'}
+              </button>
+            </div>
+
+            {/* Contact Info */}
+            <div className="bg-white/5 border border-[#C9A84C]/15 rounded-xl p-6 space-y-4">
+              <h3 className="text-[#C9A84C] font-semibold text-sm uppercase tracking-wide">Contact Information</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <Field label="WhatsApp Number">
+                  <input className={inputCls} value={siteSettings.whatsapp_number || ''} onChange={e => setSiteSettings({...siteSettings, whatsapp_number: e.target.value})} placeholder="61466679195" />
+                </Field>
+                <Field label="WeChat ID">
+                  <input className={inputCls} value={siteSettings.wechat_id || ''} onChange={e => setSiteSettings({...siteSettings, wechat_id: e.target.value})} placeholder="auluxytc" />
+                </Field>
+                <Field label="Telegram Link">
+                  <input className={inputCls} value={siteSettings.telegram_link || ''} onChange={e => setSiteSettings({...siteSettings, telegram_link: e.target.value})} placeholder="https://t.me/luxhunterbot" />
+                </Field>
+                <Field label="Calendly URL">
+                  <input className={inputCls} value={siteSettings.calendly_url || ''} onChange={e => setSiteSettings({...siteSettings, calendly_url: e.target.value})} placeholder="https://calendly.com/..." />
+                </Field>
+                <Field label="Company Email">
+                  <input className={inputCls} type="email" value={siteSettings.company_email || ''} onChange={e => setSiteSettings({...siteSettings, company_email: e.target.value})} placeholder="info@luxhunter.com" />
+                </Field>
+              </div>
+            </div>
+
+            {/* Company Info */}
+            <div className="bg-white/5 border border-[#C9A84C]/15 rounded-xl p-6 space-y-4">
+              <h3 className="text-[#C9A84C] font-semibold text-sm uppercase tracking-wide">Company Information</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <Field label="Company Name">
+                  <input className={inputCls} value={siteSettings.company_name || ''} onChange={e => setSiteSettings({...siteSettings, company_name: e.target.value})} placeholder="LuxHunter" />
+                </Field>
+                <Field label="ABN">
+                  <input className={inputCls} value={siteSettings.company_abn || ''} onChange={e => setSiteSettings({...siteSettings, company_abn: e.target.value})} placeholder="84 619 992 497" />
+                </Field>
+              </div>
+            </div>
+
+            {/* Newsletter Settings */}
+            <div className="bg-white/5 border border-[#C9A84C]/15 rounded-xl p-6 space-y-4">
+              <h3 className="text-[#C9A84C] font-semibold text-sm uppercase tracking-wide">Newsletter Settings</h3>
+              <div className="space-y-4">
+                <Field label="Email Subject Line">
+                  <input className={inputCls} value={siteSettings.newsletter_subject || ''} onChange={e => setSiteSettings({...siteSettings, newsletter_subject: e.target.value})} placeholder="LuxHunter Property Brief" />
+                </Field>
+                <Field label="Greeting Text">
+                  <input className={inputCls} value={siteSettings.newsletter_greeting || ''} onChange={e => setSiteSettings({...siteSettings, newsletter_greeting: e.target.value})} placeholder="Hi there" />
+                </Field>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <Field label="CTA Button Text">
+                    <input className={inputCls} value={siteSettings.newsletter_cta_text || ''} onChange={e => setSiteSettings({...siteSettings, newsletter_cta_text: e.target.value})} placeholder="Get Your Free Report" />
+                  </Field>
+                  <Field label="CTA Button Link">
+                    <input className={inputCls} value={siteSettings.newsletter_cta_url || ''} onChange={e => setSiteSettings({...siteSettings, newsletter_cta_url: e.target.value})} placeholder="/calculator" />
+                  </Field>
+                </div>
+              </div>
+            </div>
+
+            {/* Editable Content */}
+            <div className="bg-white/5 border border-[#C9A84C]/15 rounded-xl p-6 space-y-4">
+              <h3 className="text-[#C9A84C] font-semibold text-sm uppercase tracking-wide">Page Content (EN / 中文)</h3>
+
+              <p className="text-gray-500 text-xs">Hero Section</p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <Field label="Hero Title (EN)">
+                  <input className={inputCls} value={siteSettings.content_hero_title_en || ''} onChange={e => setSiteSettings({...siteSettings, content_hero_title_en: e.target.value})} />
+                </Field>
+                <Field label="Hero Title (中文)">
+                  <input className={inputCls} value={siteSettings.content_hero_title_zh || ''} onChange={e => setSiteSettings({...siteSettings, content_hero_title_zh: e.target.value})} />
+                </Field>
+                <Field label="Hero Subtitle (EN)">
+                  <input className={inputCls} value={siteSettings.content_hero_subtitle_en || ''} onChange={e => setSiteSettings({...siteSettings, content_hero_subtitle_en: e.target.value})} />
+                </Field>
+                <Field label="Hero Subtitle (中文)">
+                  <input className={inputCls} value={siteSettings.content_hero_subtitle_zh || ''} onChange={e => setSiteSettings({...siteSettings, content_hero_subtitle_zh: e.target.value})} />
+                </Field>
+                <Field label="Hero CTA Button (EN)">
+                  <input className={inputCls} value={siteSettings.content_hero_cta_en || ''} onChange={e => setSiteSettings({...siteSettings, content_hero_cta_en: e.target.value})} />
+                </Field>
+                <Field label="Hero CTA Button (中文)">
+                  <input className={inputCls} value={siteSettings.content_hero_cta_zh || ''} onChange={e => setSiteSettings({...siteSettings, content_hero_cta_zh: e.target.value})} />
+                </Field>
+              </div>
+
+              <p className="text-gray-500 text-xs mt-4">Services CTA</p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <Field label="CTA Title (EN)">
+                  <input className={inputCls} value={siteSettings.content_services_cta_title_en || ''} onChange={e => setSiteSettings({...siteSettings, content_services_cta_title_en: e.target.value})} />
+                </Field>
+                <Field label="CTA Title (中文)">
+                  <input className={inputCls} value={siteSettings.content_services_cta_title_zh || ''} onChange={e => setSiteSettings({...siteSettings, content_services_cta_title_zh: e.target.value})} />
+                </Field>
+                <Field label="CTA Description (EN)">
+                  <textarea className={textareaCls} rows={2} value={siteSettings.content_services_cta_desc_en || ''} onChange={e => setSiteSettings({...siteSettings, content_services_cta_desc_en: e.target.value})} />
+                </Field>
+                <Field label="CTA Description (中文)">
+                  <textarea className={textareaCls} rows={2} value={siteSettings.content_services_cta_desc_zh || ''} onChange={e => setSiteSettings({...siteSettings, content_services_cta_desc_zh: e.target.value})} />
+                </Field>
+              </div>
+
+              <p className="text-gray-500 text-xs mt-4">Newsletter Section</p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <Field label="Newsletter Title (EN)">
+                  <input className={inputCls} value={siteSettings.content_newsletter_title_en || ''} onChange={e => setSiteSettings({...siteSettings, content_newsletter_title_en: e.target.value})} />
+                </Field>
+                <Field label="Newsletter Title (中文)">
+                  <input className={inputCls} value={siteSettings.content_newsletter_title_zh || ''} onChange={e => setSiteSettings({...siteSettings, content_newsletter_title_zh: e.target.value})} />
+                </Field>
+                <Field label="Newsletter Subtitle (EN)">
+                  <input className={inputCls} value={siteSettings.content_newsletter_subtitle_en || ''} onChange={e => setSiteSettings({...siteSettings, content_newsletter_subtitle_en: e.target.value})} />
+                </Field>
+                <Field label="Newsletter Subtitle (中文)">
+                  <input className={inputCls} value={siteSettings.content_newsletter_subtitle_zh || ''} onChange={e => setSiteSettings({...siteSettings, content_newsletter_subtitle_zh: e.target.value})} />
+                </Field>
+              </div>
+
+              <p className="text-gray-500 text-xs mt-4">Footer</p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <Field label="Footer Disclaimer (EN)">
+                  <textarea className={textareaCls} rows={3} value={siteSettings.content_footer_disclaimer_en || ''} onChange={e => setSiteSettings({...siteSettings, content_footer_disclaimer_en: e.target.value})} />
+                </Field>
+                <Field label="Footer Disclaimer (中文)">
+                  <textarea className={textareaCls} rows={3} value={siteSettings.content_footer_disclaimer_zh || ''} onChange={e => setSiteSettings({...siteSettings, content_footer_disclaimer_zh: e.target.value})} />
+                </Field>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button onClick={saveSettings} disabled={settingsSaving} className={btnGold}>
+                <Save size={15} />
+                {settingsSaving ? 'Saving...' : 'Save All Settings'}
+              </button>
             </div>
           </div>
         )}

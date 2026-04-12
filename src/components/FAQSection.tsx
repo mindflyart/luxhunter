@@ -79,11 +79,11 @@ const FAQSection: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-white mb-4">
-            {language === 'en' ? 'Common Questions' : '常见问题'}
+            {language === 'en' ? language === 'en' ? 'Common Questions' : '常见问题' : '常见问题'}
           </h2>
           <p className="text-gray-400 text-lg">
             {language === 'en'
-              ? 'Find answers to frequently asked questions about our services'
+              ? language === 'en' ? 'Find answers to frequently asked questions about our services' : '查找有关我们服务的常见问题解答'
               : '查找有关我们服务的常见问题解答'}
           </p>
         </div>
@@ -126,12 +126,12 @@ const FAQSection: React.FC = () => {
         <div className="mt-10 text-center">
           <p className="text-gray-400 mb-4">
             {language === 'en'
-              ? 'Still have questions?'
+              ? language === 'en' ? 'Still have questions?' : '还有其他问题？'
               : '还有其他问题？'}
           </p>
           <p className="text-sm text-gray-500">
             {language === 'en'
-              ? 'Contact us for personalized advice and support.'
+              ? language === 'en' ? 'Contact us for personalized advice and support.' : '联系我们获取个性化建议和支持。'
               : '联系我们获取个性化建议和支持。'}
           </p>
         </div>

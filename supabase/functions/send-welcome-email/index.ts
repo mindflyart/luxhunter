@@ -29,6 +29,19 @@ Deno.serve(async (req: Request) => {
       leadData,
     });
 
+    // Load Calendly URL from site_settings
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    const { data: settingsData } = await supabaseAdmin.from("site_settings").select("*").eq("key", "calendly_url").single();
+    const calendlyUrl = settingsData?.value || "https://calendly.com/newluxytc-pm/30min";
+
+    // Load latest interest rates from admin
+    const { data: ratesData } = await supabaseAdmin.from("interest_rates").select("*").order("interest_rate", { ascending: true });
+    const variableRate = ratesData?.find((r: any) => r.rate_type === "Variable")?.interest_rate || 5.54;
+    const fixedRate = ratesData?.find((r: any) => r.rate_type === "Fixed" || r.rate_type === "Fixed 3yr")?.interest_rate || 5.79;
+
     if (!email) {
       return new Response(JSON.stringify({ error: "Email is required" }), {
         status: 400,
@@ -105,7 +118,7 @@ Deno.serve(async (req: Request) => {
       const loanTerm = leadData?.loanTerm ? `${leadData.loanTerm} years` : null;
       const location = leadData?.postcode && leadData?.state ? `${leadData.postcode}, ${leadData.state}` : null;
 
-      const calendlyUrl = "https://calendly.com/luxhunter";
+      // calendlyUrl loaded from site_settings above
 
       emailSubject = "Your Complete Borrowing Capacity Results";
       emailHtml = `
@@ -211,7 +224,7 @@ Deno.serve(async (req: Request) => {
       `;
     } else if (type === "report") {
       const unsubscribeUrl = `${appUrl}/unsubscribe?email=${encodeURIComponent(email)}`;
-      const calendlyUrl = "https://calendly.com/luxhunter";
+      // calendlyUrl loaded from site_settings above
 
       const fullResults = leadData ? `
         <div style="background: #1e3a5f; padding: 24px; border-radius: 8px; margin: 24px 0; border: 2px solid #C9A84C;">
@@ -320,7 +333,7 @@ Deno.serve(async (req: Request) => {
                 <p style="color: #ccc; margin: 0; font-size: 14px;">Variable Rate (Owner Occupied)</p>
               </td>
               <td style="padding: 8px 0; text-align: right;">
-                <p style="color: #fff; margin: 0; font-size: 16px; font-weight: bold;">6.09% p.a.</p>
+                <p style="color: #fff; margin: 0; font-size: 16px; font-weight: bold;">${variableRate.toFixed(2)}% p.a.</p>
               </td>
             </tr>
             <tr>
@@ -328,7 +341,7 @@ Deno.serve(async (req: Request) => {
                 <p style="color: #ccc; margin: 0; font-size: 14px;">Fixed Rate (3 Years)</p>
               </td>
               <td style="padding: 8px 0; text-align: right;">
-                <p style="color: #fff; margin: 0; font-size: 16px; font-weight: bold;">5.79% p.a.</p>
+                <p style="color: #fff; margin: 0; font-size: 16px; font-weight: bold;">${fixedRate.toFixed(2)}% p.a.</p>
               </td>
             </tr>
           </table>
@@ -402,7 +415,7 @@ Deno.serve(async (req: Request) => {
       `;
     } else {
       const unsubscribeUrl = `${appUrl}/unsubscribe?email=${encodeURIComponent(email)}`;
-      const calendlyUrl = "https://calendly.com/luxhunter";
+      // calendlyUrl loaded from site_settings above
 
       emailSubject = "Welcome to LuxHunter Property Services";
       emailHtml = `

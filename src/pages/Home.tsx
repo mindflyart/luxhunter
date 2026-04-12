@@ -25,7 +25,7 @@ interface FeaturedProperty {
 }
 
 const Home: React.FC<HomeProps> = ({ onGetFreeReport, onNavigate }) => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [featuredProperties, setFeaturedProperties] = useState<FeaturedProperty[]>([]);
 
   useEffect(() => {
@@ -172,6 +172,49 @@ const Home: React.FC<HomeProps> = ({ onGetFreeReport, onNavigate }) => {
               <BudgetCheckWidget />
             </div>
           </div>
+
+          {/* Calculator CTA Highlight Card */}
+          <div className="max-w-2xl mx-auto mb-8">
+            <button
+              onClick={() => document.getElementById('budget-calculator')?.scrollIntoView({ behavior: 'smooth' })}
+              className="w-full group relative overflow-hidden rounded-lg border-2 border-[#C9A84C] bg-[#C9A84C]/10 backdrop-blur-sm p-6 md:p-8 transition-all hover:bg-[#C9A84C]/20 hover:shadow-[0_0_30px_rgba(201,168,76,0.3)]"
+              style={{ animation: 'glow 2s ease-in-out infinite alternate' }}
+            >
+              <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+                <div className="p-4 bg-[#C9A84C]/20 rounded-full">
+                  <Calculator className="text-[#C9A84C]" size={32} />
+                </div>
+                <div className="text-center md:text-left flex-1">
+                  <h3 className="text-xl md:text-2xl font-bold text-white mb-1">
+                    {t('home.calculator.title')}
+                  </h3>
+                  <p className="text-gray-300 text-sm md:text-base">
+                    {language === 'en'
+                      ? '60 seconds to find out how much you can borrow — free, no signup'
+                      : '60秒免费测算您的借贷能力 — 无需注册'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-[#C9A84C] font-semibold group-hover:translate-y-1 transition-transform">
+                  <span className="hidden md:inline">{language === 'en' ? 'Calculate Now' : '立即计算'}</span>
+                  <svg className="w-6 h-6 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex items-center justify-center gap-4 md:gap-6 mt-4 text-xs md:text-sm text-gray-400">
+                <span>✓ {language === 'en' ? 'Free' : '免费'}</span>
+                <span>✓ {language === 'en' ? 'Instant Results' : '即时结果'}</span>
+                <span>✓ {language === 'en' ? 'No Signup' : '无需注册'}</span>
+              </div>
+            </button>
+          </div>
+
+          <style>{\`
+            @keyframes glow {
+              from { box-shadow: 0 0 10px rgba(201, 168, 76, 0.1); }
+              to { box-shadow: 0 0 25px rgba(201, 168, 76, 0.25); }
+            }
+          \`}</style>
 
           <div id="budget-calculator" className="max-w-4xl mx-auto">
             <HouseBudgetCalculator onGetFreeReport={onGetFreeReport} />
