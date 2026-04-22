@@ -85,6 +85,22 @@ function calcNTStandard(price: number): number {
   return (0.06571441 * V * V + 15 * V) * 0.01;
 }
 
+// QLD Home Concession: first $350k at 1%, balance at standard rates. No price cap. PPR only.
+// Savings vs standard is a flat $7,175 for any price >= $350,000.
+function calcQLDHomeConcession(price: number): number {
+  if (price <= 350000) return price * 0.01;
+  return calcQLDStandard(price) - 7175;
+}
+
+// QLD First Home Concession rebate (QRO 2025-2026). Subtracted from Home Concession duty.
+// $17,350 up to $699,999, decreasing by $1,735 per $10k bracket, $0 at $800,000+.
+function calcQLDFirstHomeRebate(price: number): number {
+  if (price < 700000) return 17350;
+  if (price >= 800000) return 0;
+  const bracket = Math.floor((price - 700000) / 10000);
+  return 17350 - bracket * 1735;
+}
+
 // --- Main export ---
 
 export function calculateStampDuty(
@@ -106,47 +122,51 @@ export function calculateStampDuty(
     case 'QLD': {
       standardDuty = calcQLDStandard(propertyPrice);
       const isForeign = buyerType === 'Foreign Buyer';
+      const isOwnerOccupier = buyerType === 'Owner Occupied';
 
-      if (isFirstHomeBuyer && !isForeign) {
+      if (isForeign) {
+        const afad = propertyPrice * 0.08;
+        amount = standardDuty + afad;
+        eligibilityMessage = `Foreign buyer: standard duty + 8% AFAD ($${Math.round(afad).toLocaleString()})`;
+      } else if (isFirstHomeBuyer) {
         if (propertyType === 'New Build') {
-          // After 1 May 2025: $0 no cap for new builds
           amount = 0;
           fhbExemptionApplied = true;
           savingsAmount = standardDuty;
-          eligibilityMessage = `🎉 Full exemption! QLD First Home Buyer concession (New Build) saves you $${Math.round(savingsAmount).toLocaleString()}`;
+          eligibilityMessage = `🎉 Full exemption! QLD First Home (New Build) saves you $${Math.round(savingsAmount).toLocaleString()}`;
         } else if (propertyType === 'Vacant Land') {
-          // $0 no cap for vacant land
           amount = 0;
           fhbExemptionApplied = true;
           savingsAmount = standardDuty;
-          eligibilityMessage = `🎉 Full exemption! QLD First Home Buyer concession (Vacant Land) saves you $${Math.round(savingsAmount).toLocaleString()}`;
+          eligibilityMessage = `🎉 Full exemption! QLD First Home (Vacant Land) saves you $${Math.round(savingsAmount).toLocaleString()}`;
         } else {
-          // Established Home
+          // Established Home: Home Concession duty minus First Home Concession rebate
           if (propertyPrice <= 700000) {
             amount = 0;
             fhbExemptionApplied = true;
             savingsAmount = standardDuty;
-            eligibilityMessage = `🎉 Full exemption! QLD First Home Buyer concession saves you $${Math.round(savingsAmount).toLocaleString()}`;
-          } else if (propertyPrice <= 800000) {
-            // Partial concession: sliding scale
-            const concessionFraction = (800000 - propertyPrice) / 100000;
-            concessionAmount = standardDuty * concessionFraction;
-            amount = standardDuty - concessionAmount;
-            fhbExemptionApplied = true;
-            savingsAmount = concessionAmount;
-            eligibilityMessage = `✅ Partial QLD First Home Buyer concession applied. You save $${Math.round(savingsAmount).toLocaleString()}`;
+            eligibilityMessage = `🎉 Full exemption! QLD First Home Concession saves you $${Math.round(savingsAmount).toLocaleString()}`;
           } else {
-            amount = standardDuty;
-            eligibilityMessage = 'Standard rates apply (property over $800,000 threshold)';
+            const homeConcDuty = calcQLDHomeConcession(propertyPrice);
+            const rebate = calcQLDFirstHomeRebate(propertyPrice);
+            amount = Math.max(0, homeConcDuty - rebate);
+            savingsAmount = standardDuty - amount;
+            concessionAmount = savingsAmount;
+            fhbExemptionApplied = rebate > 0;
+            eligibilityMessage = propertyPrice < 800000
+              ? `✅ QLD First Home Concession (partial) applied. You save $${Math.round(savingsAmount).toLocaleString()}`
+              : `✅ QLD Home Concession applied (First Home Concession caps at $800k). You save $${Math.round(savingsAmount).toLocaleString()}`;
           }
         }
+      } else if (isOwnerOccupier && propertyType !== 'Vacant Land') {
+        // Owner-occupier PPR: Home Concession applies, no price cap
+        amount = calcQLDHomeConcession(propertyPrice);
+        savingsAmount = standardDuty - amount;
+        concessionAmount = savingsAmount;
+        eligibilityMessage = `✅ QLD Home Concession (owner-occupier) applied. You save $${Math.round(savingsAmount).toLocaleString()}`;
       } else {
+        // Investor, or owner-occupier vacant land
         amount = standardDuty;
-        if (isForeign) {
-          const afad = propertyPrice * 0.08;
-          amount = standardDuty + afad;
-          eligibilityMessage = `Foreign buyer: standard duty + 8% AFAD ($${Math.round(afad).toLocaleString()})`;
-        }
       }
       break;
     }

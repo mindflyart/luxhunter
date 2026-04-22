@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 
 const Contact: React.FC = () => {
   const { t } = useLanguage();
+  const settings = useSiteSettings();
   const [formData, setFormData] = useState({
     name: '',
     email: '',

@@ -209,12 +209,12 @@ const Home: React.FC<HomeProps> = ({ onGetFreeReport, onNavigate }) => {
             </button>
           </div>
 
-          <style>{\`
+          <style>{`
             @keyframes glow {
               from { box-shadow: 0 0 10px rgba(201, 168, 76, 0.1); }
               to { box-shadow: 0 0 25px rgba(201, 168, 76, 0.25); }
             }
-          \`}</style>
+          `}</style>
 
           <div id="budget-calculator" className="max-w-4xl mx-auto">
             <HouseBudgetCalculator onGetFreeReport={onGetFreeReport} />

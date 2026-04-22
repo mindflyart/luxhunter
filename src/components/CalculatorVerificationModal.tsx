@@ -85,6 +85,15 @@ const CalculatorVerificationModal: React.FC<CalculatorVerificationModalProps> = 
         throw new Error(data.error || 'Failed to send verification email');
       }
 
+      fetch(`${supabaseUrl}/functions/v1/save-to-airtable`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(leadData),
+      }).catch((err) => console.error('Airtable sync error:', err));
+
       setSubmitted(true);
       if (onVerificationSent) {
         onVerificationSent();
